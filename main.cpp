@@ -2,6 +2,8 @@
 #include <string>
 #include <limits> // 用于 numeric_limits
 
+//HI
+
 // 引入我们的核心头文件
 #include "FlightCommon.hpp"
 
