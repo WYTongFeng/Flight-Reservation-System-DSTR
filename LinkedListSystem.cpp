@@ -1,5 +1,6 @@
 #include "FlightCommon.hpp"
 #include <iostream>
+#include <iomanip> // 必须加这个才能用 setw (设置宽度)
 
 using namespace std;
 
@@ -162,25 +163,62 @@ public:
         return nullptr;
     }
 
-    // Display (简单的打印，方便调试)
-    void displayManifest() override {
-        cout << "\n--- Main Passenger List (Doubly LL) ---" << endl;
-        Passenger* current = head;
-        if (!current) cout << "(Empty)" << endl;
-        while (current != nullptr) {
-            cout << "[" << current->passengerID << "] " << current->name 
-                 << " | Seat: " << current->seatRow << current->seatCol << endl;
-            current = current->next;
-        }
+// [Week 7 Task] Manifest: 打印完整名单 (美化版)
+void displayManifest() override {
+    // 1. 打印表头 (Header)
+    cout << "\n==============================================================" << endl;
+    cout << "               FLIGHT MANIFEST (LINKED LIST)                  " << endl;
+    cout << "==============================================================" << endl;
 
-        cout << "\n--- Waitlist (Singly LL) ---" << endl;
-        Passenger* w = waitlistHead;
-        if (!w) cout << "(Empty)" << endl;
-        while (w != nullptr) {
-            cout << "[WL] " << w->name << " (" << w->flightClass << ")" << endl;
-            w = w->next;
+    // set: 设置, w: width (宽度)
+    // left: 让文字靠左对齐 (默认是靠右)
+    cout << left << setw(10) << "ID" 
+         << left << setw(20) << "Name" 
+         << left << setw(10) << "Seat" 
+         << left << setw(15) << "Class" << endl;
+    cout << "--------------------------------------------------------------" << endl;
+
+    // 2. 准备开始遍历主名单
+    Passenger* current = head; // 定义一个指针，像手指一样指向链表的头(第一个人)
+
+    if (current == nullptr) {
+        // 如果头是空的，说明没乘客
+        cout << "[System Empty] No passengers in Main List." << endl;
+    } else {
+        // 3. 循环遍历 (While Loop)
+        while (current != nullptr) {
+            // 拼凑座位号: 比如 Row 1 和 Col "A" -> 变成 "1A"
+            string fullSeat = to_string(current->seatRow) + current->seatCol;
+
+            // 打印这一行的数据，保持和表头一样的宽度
+            cout << left << setw(10) << current->passengerID
+                 << left << setw(20) << current->name
+                 << left << setw(10) << fullSeat
+                 << left << setw(15) << current->flightClass << endl;
+            
+            // 4. 关键步骤：指针后移 (Move to next)
+            current = current->next; 
         }
     }
+
+    // 5. 打印候补名单 (Waitlist)
+    cout << "\n------------------------- WAITLIST ---------------------------" << endl;
+    Passenger* w = waitlistHead; // 让手指指向候补名单的头
+
+    if (w == nullptr) {
+        cout << "(Waitlist is Empty)" << endl;
+    } else {
+        while (w != nullptr) {
+             cout << left << setw(10) << w->passengerID
+                 << left << setw(20) << w->name
+                 << left << setw(10) << "WAITING" // 候补没有座位，写死 WAITING
+                 << left << setw(15) << w->flightClass << endl;
+            
+            w = w->next; // 别忘了移动指针！否则会死循环
+        }
+    }
+    cout << "==============================================================" << endl;
+}
 
     // Leader 不需要负责 Map，留空
     void displaySeatingMap() override {
