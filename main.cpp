@@ -7,6 +7,7 @@
 
 // 引入我们的核心头文件
 #include "FlightCommon.hpp"
+#include "Timer.hpp"
 
 // 引入子系统的头文件 (虽然还没写完，但先include进来)
 // 注意：你需要确保这两个 .cpp 文件里至少有空类定义，否则报错
