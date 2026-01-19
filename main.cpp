@@ -1,8 +1,9 @@
 #include <iostream>
 #include <string>
 #include <limits> // 用于 numeric_limits
-
-//HI
+#include <fstream>
+#include <sstream>
+#include <vector>
 
 // 引入我们的核心头文件
 #include "FlightCommon.hpp"
@@ -13,6 +14,45 @@
 #include "LinkedListSystem.cpp"
 
 using namespace std;
+
+void loadData(FlightSystem* sys, string filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cout << "Error: Could not open file " << filename << endl;
+        return;
+    }
+
+    string line;
+    // 跳过第一行标题 (如果有的话，看你的CSV内容而定，通常都有header)
+    getline(file, line); 
+
+    int count = 0;
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string id, name, rowStr, col, fclass;
+        
+        // 假设 CSV 格式是: ID,Name,Row,Col,Class
+        // 你需要根据实际 CSV 格式调整这里的顺序
+        getline(ss, id, ',');
+        getline(ss, name, ',');
+        getline(ss, rowStr, ',');
+        getline(ss, col, ',');
+        getline(ss, fclass, ','); // 如果后面还有 \r 记得处理，不过 stringstream 通常还好
+
+        if (!id.empty()) {
+            try {
+                int row = stoi(rowStr);
+                // 调用你刚刚写好的 addPassenger
+                sys->addPassenger(id, name, row, col, fclass);
+                count++;
+            } catch (...) {
+                // 防止 stoi 报错
+            }
+        }
+    }
+    cout << ">> Loaded " << count << " passengers from " << filename << endl;
+    file.close();
+}
 
 // 辅助函数：显示菜单
 void showMenu() {
@@ -103,6 +143,15 @@ int main() {
     // 注意：这两个类必须在 ArraySystem.cpp 和 LinkedListSystem.cpp 里定义好
     FlightSystem* arraySys = new ArraySystem();
     FlightSystem* listSys = new LinkedListSystem();
+
+    string filename = "flight_passenger_data.csv.csv";
+
+    cout << "--- Initializing Data ---" << endl;
+    cout << "Loading into Array System..." << endl;
+    loadData(arraySys, filename);
+    
+    cout << "Loading into Linked List System..." << endl;
+    loadData(listSys, filename);
 
     int mainChoice;
     while (true) {
