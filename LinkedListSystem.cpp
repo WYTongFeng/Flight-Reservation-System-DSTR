@@ -225,8 +225,72 @@ void displayManifest() override {
         cout << "[LL] Map not available (Array team's job)." << endl;
     }
 
-    // Sorting 先留空，Week 8 Member 4 才做
+// [Member 4 Task] Sorting - Bubble Sort (Week 8)
+    // 使用 "Data Swap" (只换数据，不换节点) 的方式，最安全
     void sortAlphabetically() override {
-        cout << "[LL] Sort not implemented yet." << endl;
+        // 1. 安全检查：如果链表是空的，或者只有1个人，那就不需要排序
+        if (head == nullptr || head->next == nullptr) {
+            cout << ">> [LL] List is empty or has only 1 passenger. No sort needed." << endl;
+            return;
+        }
+
+        bool swapped;          // 标记：这一轮有没有发生过交换？
+        Passenger* ptr1;       // 游标：当前指着谁
+        Passenger* lptr = nullptr; // 终点标记：每一轮冒泡后，最大的泡泡会跑到最后，下次就不用比它了
+
+        cout << ">> [LL] Sorting Linked List by Name (Bubble Sort)..." << endl;
+
+        // 2. 冒泡排序主循环 (do-while)
+        do {
+            swapped = false; // 每一轮开始前，先假设没交换过
+            ptr1 = head;     // 每次都从头开始跑
+
+            // 内层循环：从头走到“终点”
+            while (ptr1->next != lptr) {
+                // 3. 比较名字 (A-Z)
+                // 如果当前这个人的名字 > 下一个人的名字 (比如 "Jack" > "Alice")
+                if (ptr1->name > ptr1->next->name) {
+                    
+                    // 4. 交换数据 (Swap Data Only)
+                    // 也就是“交换名牌”，不动指针
+                    
+                    // A. 交换 ID
+                    string tempID = ptr1->passengerID;
+                    ptr1->passengerID = ptr1->next->passengerID;
+                    ptr1->next->passengerID = tempID;
+
+                    // B. 交换 Name
+                    string tempName = ptr1->name;
+                    ptr1->name = ptr1->next->name;
+                    ptr1->next->name = tempName;
+
+                    // C. 交换 Row
+                    int tempRow = ptr1->seatRow;
+                    ptr1->seatRow = ptr1->next->seatRow;
+                    ptr1->next->seatRow = tempRow;
+
+                    // D. 交换 Col
+                    string tempCol = ptr1->seatCol;
+                    ptr1->seatCol = ptr1->next->seatCol;
+                    ptr1->next->seatCol = tempCol;
+
+                    // E. 交换 Class
+                    string tempClass = ptr1->flightClass;
+                    ptr1->flightClass = ptr1->next->flightClass;
+                    ptr1->next->flightClass = tempClass;
+
+                    swapped = true; // 举手：报告！我刚才交换了一次！
+                }
+                ptr1 = ptr1->next; // 游标往后移，去比下一对
+            }
+            // 一轮跑完后，最后那个已经是最大的了，下次不用比它
+            lptr = ptr1; 
+
+        } while (swapped); // 只要这一轮发生了交换，说明还不够乱，继续跑下一轮。如果一轮下来都没交换，说明排好了。
+
+        cout << ">> [LL] Sorting Complete." << endl;
+        
+        // 排序完后顺便打印一下名单给大家看
+        displayManifest(); 
     }
 };
