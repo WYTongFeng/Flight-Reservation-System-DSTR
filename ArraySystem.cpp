@@ -109,59 +109,16 @@ public:
         cout << ">> [Array] Booked " << name << " at Seat " << row << col << endl;
     }
 
-    // =========================================================
-    // [Member 2 Task] Cancellation (Deletion) - 取消预订
-    // 负责：1D 数组移位 (Shift) + 清除 2D 标记
-    // =========================================================
+    // [Function 2] Remove Passenger
     bool removePassenger(string id) override {
-        int targetIndex = -1;
-
-        // 1. 在 1D 数组中线性查找 (Linear Search)
-        for (int i = 0; i < currentCount; i++) {
-            if (passengerList[i]->passengerID == id) {
-                targetIndex = i;
-                break;
-            }
-        }
-
-        if (targetIndex == -1) return false; // 没找到
-
-        // 2. 获取座位信息，以便清除 2D Map
-        int rIndex = passengerList[targetIndex]->seatRow - 1;
-        int cIndex = getColIndex(passengerList[targetIndex]->seatCol);
-
-        // 3. 清除 2D Map
-        if (rIndex >= 0 && rIndex < MAX_ROWS && cIndex != -1) {
-            seatMap[rIndex][cIndex] = "---"; // 变回空位
-        }
-
-        // 4. 释放内存
-        delete passengerList[targetIndex];
-
-        // 5. [核心算法] 1D 数组移位 (Shift Left)
-        // 既然这是一个数组，删掉中间的人，后面的人要往前补位
-        for (int i = targetIndex; i < currentCount - 1; i++) {
-            passengerList[i] = passengerList[i + 1];
-        }
-        
-        // 最后一位清空
-        passengerList[currentCount - 1] = nullptr;
-        currentCount--; // 总数减一
-
-        cout << ">> [Array] Passenger " << id << " removed. Seat freed." << endl;
-        return true;
+        // TODO: 写在这里：从数组删除
+        cout << "[Array] Remove Passenger not implemented yet." << endl;
+        return false;
     }
-
-    // =========================================================
-    // [Member 2 Task] Seat Lookup (Search)
-    // 规则：必须使用 Linear Search (for loop)
-    // =========================================================
+    // [Function 3] Search Passenger
     Passenger* searchPassenger(const string& id) override {
-        for (int i = 0; i < currentCount; i++) {
-            if (passengerList[i]->passengerID == id) {
-                return passengerList[i];
-            }
-        }
+        // TODO: 写在这里：线性查找
+        cout << "[Array] Search Passenger not implemented yet." << endl;
         return nullptr;
     }
 
