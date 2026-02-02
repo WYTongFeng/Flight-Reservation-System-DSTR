@@ -115,14 +115,11 @@ void runSystem(FlightSystem* sys, string name) {
                     else cout << ">> Not found.\n";
                 }
                 break;
-            case 4: // Manifest
-                sys->displayManifest();
+            case 4: // Display Map (Fixed: 不会再弹多余的名单)
                 sys->displaySeatingMap();
                 break;
-            case 5: // Sort
+            case 5: // Sort (Fixed: 不会再弹多余的名单)
                 sys->sortAlphabetically();
-                cout << ">> Sorted successfully.\n";
-                sys->displayManifest(); // 排序后立即显示
                 break;
             case 6: // Waitlist
                 cout << "Enter ID: "; cin >> id;
