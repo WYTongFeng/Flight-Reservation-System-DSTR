@@ -5,7 +5,7 @@
 // Constructor to initialize the current size of the array
 ArrayHandler::ArrayHandler() : currentSize(0) {}
 
-// CSV Loader - Member 2 task: Handles file input and data parsing [cite: 35, 41, 73]
+// CSV Loader - Handles file input and data parsing [cite: 35, 41, 73]
 void ArrayHandler::loadFromCSV(string filename) {
     ifstream file(filename);
     if (!file.is_open()) {
