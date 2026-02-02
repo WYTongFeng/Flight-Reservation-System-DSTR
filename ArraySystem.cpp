@@ -1,28 +1,31 @@
 #include "FlightCommon.hpp"
 #include <iostream>
-#include <iomanip> // 用于 setw 格式化输出
+#include <iomanip>
 #include <string>
+#include <limits> // 用于清理输入缓冲区
+#include <cmath> // 用于 ceil 计算页数
 
 using namespace std;
 
-// 定义飞机的物理参数 (根据 CSV 数据分析得出)
-const int MAX_ROWS = 30; // 假设飞机有 30 排
-const int MAX_COLS = 6;  // A-F 共 6 列
-const int MAX_CAPACITY = 200; // 这里的容量设小一点，或者设为 10000 (看 CSV 大小)
-// 注意：如果 CSV 有 10000 人，但飞机只有 180 个座位，这里实际上只能装 180 人。
+// ==========================================
+// 系统配置
+// ==========================================
+const int COLS = 6;
+// 每页显示行数 (你可以改成 5 或 15)
+const int ROWS_PER_PAGE = 10; 
+const int MANIFEST_PER_PAGE = 15; // Manifest 每页显示 15 人
+// 列宽：加大到 20 以显示全名
+const int COL_WIDTH = 22; 
 
 class ArraySystem : public FlightSystem {
 private:
-    // [Member 1 核心数据结构] 2D Array - 用于直观的座位图
-    // 存储 PassengerID，如果为空则存 "---"
-    string seatMap[MAX_ROWS][MAX_COLS];
+    string** seatMap; 
+    int maxRows; 
+    Passenger** passengerList; 
+    int passengerCapacity; 
+    int currentCount;      
 
-    // [Member 2 核心数据结构] 1D Array - 用于名单管理和线性搜索
-    // 为了符合 "No vector" 规则，我们用原生指针数组
-    Passenger* passengerList[MAX_CAPACITY]; 
-    int currentCount; // 当前乘客数量
-
-    // [Helper] 将列号 "A"-"F" 转换为索引 0-5
+    // Helper: 列转换
     int getColIndex(string col) {
         if (col == "A") return 0;
         if (col == "B") return 1;
@@ -30,83 +33,114 @@ private:
         if (col == "D") return 3;
         if (col == "E") return 4;
         if (col == "F") return 5;
-        return -1; // 无效列
+        return -1;
+    }
+    string getColName(int index) {
+        string cols[] = {"A", "B", "C", "D", "E", "F"};
+        return cols[index];
+    }
+
+    // Helper: 名字处理
+    string formatName(string name) {
+        if (name == "EMPTY") return "---";
+        return name;
+    }
+
+    // 自动扩容 - Map
+    void expandSeatMap(int requiredRow) {
+        if (requiredRow <= maxRows) return;
+        int newMax = maxRows * 2; 
+        if (newMax < requiredRow) newMax = requiredRow + 10;
+
+        string** newMap = new string*[newMax];
+        for (int i = 0; i < newMax; i++) {
+            newMap[i] = new string[COLS];
+            for (int j = 0; j < COLS; j++) newMap[i][j] = "EMPTY"; 
+        }
+
+        for (int i = 0; i < maxRows; i++) {
+            for (int j = 0; j < COLS; j++) newMap[i][j] = seatMap[i][j];
+        }
+        for (int i = 0; i < maxRows; i++) delete[] seatMap[i];
+        delete[] seatMap;
+
+        seatMap = newMap;
+        maxRows = newMax;
+    }
+
+    // 自动扩容 - List
+    void expandPassengerList() {
+        int newCap = passengerCapacity * 2;
+        Passenger** newList = new Passenger*[newCap];
+        for (int i = 0; i < currentCount; i++) newList[i] = passengerList[i];
+        for (int i = currentCount; i < newCap; i++) newList[i] = nullptr;
+        delete[] passengerList;
+        passengerList = newList;
+        passengerCapacity = newCap;
     }
 
 public:
-    // 构造函数：初始化数组
+    // 1. Constructor
     ArraySystem() {
         currentCount = 0;
-        
-        // 1. 初始化 2D 座位图 (全部设为 Empty)
-        for (int i = 0; i < MAX_ROWS; i++) {
-            for (int j = 0; j < MAX_COLS; j++) {
-                seatMap[i][j] = "---";
-            }
+        maxRows = 50; 
+        passengerCapacity = 200; 
+
+        seatMap = new string*[maxRows];
+        for (int i = 0; i < maxRows; i++) {
+            seatMap[i] = new string[COLS];
+            for (int j = 0; j < COLS; j++) seatMap[i][j] = "EMPTY";
         }
 
-        // 2. 初始化 1D 列表 (全部设为 nullptr)
-        for (int i = 0; i < MAX_CAPACITY; i++) {
-            passengerList[i] = nullptr;
-        }
+        passengerList = new Passenger*[passengerCapacity];
+        for(int i=0; i<passengerCapacity; i++) passengerList[i] = nullptr;
 
-        cout << ">> Array System Initialized (Max Rows: " << MAX_ROWS << ", Max Cols: " << MAX_COLS << ")" << endl;
+        cout << ">> Array System Initialized." << endl;
     }
 
-    // 析构函数：释放内存
     ~ArraySystem() {
-        for (int i = 0; i < currentCount; i++) {
-            delete passengerList[i]; // 释放每一个 new 出来的乘客对象
-        }
+        for (int i = 0; i < maxRows; i++) delete[] seatMap[i];
+        delete[] seatMap;
+        for (int i = 0; i < currentCount; i++) delete passengerList[i];
+        delete[] passengerList;
     }
 
-    // =========================================================
-    // [Member 1 Task] Reservation (Insertion) - 预订座位
-    // 负责：坐标转换 + 冲突检测 + 填入 2D 数组 + 填入 1D 数组
-    // =========================================================
+// ==========================================
+    // Function 1: Reservation (Modified for FULL LIST)
+    // ==========================================
     void addPassenger(string id, string name, int row, string col, string fclass) override {
-        // 1. 检查是否满员 (针对 1D 数组)
-        if (currentCount >= MAX_CAPACITY) {
-            cout << ">> [Error] System Full! Cannot add " << name << endl;
-            // 这里其实可以调用 addToWaitlist，但那是 Member 3 的事
-            return;
-        }
+        // 1. 自动扩容检测
+        if (row > maxRows) expandSeatMap(row);
+        if (currentCount >= passengerCapacity) expandPassengerList();
 
-        // 2. 验证座位坐标是否合法 (Error Handling)
-        int rIndex = row - 1; // 转换为 0-based 索引
+        int rIndex = row - 1;
         int cIndex = getColIndex(col);
 
-        if (rIndex < 0 || rIndex >= MAX_ROWS || cIndex == -1) {
-            cout << ">> [Error] Invalid Seat: " << row << col << " (Out of bounds)" << endl;
-            return;
-        }
+        if (rIndex < 0 || cIndex == -1) return;
 
-        // 3. 检查座位是否已被占用 (Collision Detection)
-        if (seatMap[rIndex][cIndex] != "---") {
-            cout << ">> [Error] Seat " << row << col << " is already occupied by " << seatMap[rIndex][cIndex] << "!" << endl;
-            // 可以在这里调用 addToWaitlist(id, name, fclass);
-            return;
-        }
-
-        // 4. 执行预订 (核心逻辑)
-        
-        // A. 创建新乘客对象
+        // ==========================================================
+        // 【关键修改】不管座位是否冲突，先把人加进 1D 名单 (passengerList)
+        // 这样你的 Sort 就能排 10,000 个人了！
+        // ==========================================================
         Passenger* newP = new Passenger;
         newP->passengerID = id;
         newP->name = name;
         newP->seatRow = row;
         newP->seatCol = col;
         newP->flightClass = fclass;
-        // Array 系统不用 next/prev 指针，保持 nullptr 即可
+        passengerList[currentCount++] = newP; // 存入名单，人数+1
 
-        // B. 存入 1D 数组 (Manifest)
-        passengerList[currentCount] = newP;
-        currentCount++;
-
-        // C. 存入 2D 数组 (Seat Map)
-        seatMap[rIndex][cIndex] = id; // 在地图上标记 ID
-
-        cout << ">> [Array] Booked " << name << " at Seat " << row << col << endl;
+        // ==========================================================
+        // 然后再处理 2D 地图 (seatMap) - 只有空位才填名字
+        // ==========================================================
+        if (seatMap[rIndex][cIndex] != "EMPTY") {
+            // 如果座位被占，只在控制台提示一下，但不要 return！
+            // 因为人已经加进上面的名单了
+            // cout << ">> [Note] Seat " << row << col << " occupied. Passenger added to list only." << endl;
+        } else {
+            // 如果座位是空的，把名字写在地图上
+            seatMap[rIndex][cIndex] = name;
+        }
     }
 
     // [Function 2] Remove Passenger
@@ -123,75 +157,171 @@ public:
     }
 
     // =========================================================
-    // [Member 1 Task] Display Seating Map - 打印可视化座位图
-    // 负责：双层循环遍历 2D 数组并美化输出
+    // [FUNCTION 4] Visual Map - Horizontal & Interactive Paging
     // =========================================================
     void displaySeatingMap() override {
-        cout << "\n==============================================" << endl;
-        cout << "           FLIGHT SEATING MAP (2D ARRAY)      " << endl;
-        cout << "==============================================" << endl;
-        cout << "      A      B      C      D      E      F" << endl;
-        
-        for (int i = 0; i < MAX_ROWS; i++) {
-            // 打印行号 (例如 "01 ", "02 ")
-            cout << setw(2) << setfill('0') << (i + 1) << "  ";
-            
-            // 内层循环：打印每一列
-            for (int j = 0; j < MAX_COLS; j++) {
-                string status = seatMap[i][j];
-                // 如果是空位，显示 [---]
-                // 如果有人，显示 ID (或者可以显示 [OCC] 节省空间)
-                // 为了美观，我们检查一下长度，如果 ID 太长可以截断，或者用占位符
-                if (status == "---") {
-                    cout << "[---]  ";
-                } else {
-                    cout << "[" << "OCC" << "]  "; // 显示 OCC 表示有人
-                }
+        int lastActiveRow = 0;
+        for(int i = maxRows - 1; i >= 0; i--) {
+            bool empty = true;
+            for(int j=0; j<COLS; j++) {
+                if(seatMap[i][j] != "EMPTY") { empty = false; break; }
             }
-            cout << endl; // 换行
+            if(!empty) { lastActiveRow = i + 1; break; }
         }
-        cout << setfill(' '); // 恢复默认填充
-        cout << "==============================================" << endl;
+        if (lastActiveRow < 20) lastActiveRow = 20; 
+
+        int totalPages = (lastActiveRow + ROWS_PER_PAGE - 1) / ROWS_PER_PAGE;
+        int currentPage = 1;
+
+        while (true) {
+            cout << string(50, '\n'); 
+
+            cout << "========================================================================================================================" << endl;
+            cout << "                                              FLIGHT SEATING MAP (FULL VIEW)                                            " << endl;
+            cout << "========================================================================================================================" << endl;
+            cout << "         " 
+                 << left << setw(COL_WIDTH) << "[A]" 
+                 << left << setw(COL_WIDTH) << "[B]" 
+                 << left << setw(COL_WIDTH) << "[C]" 
+                 << "    " 
+                 << left << setw(COL_WIDTH) << "[D]" 
+                 << left << setw(COL_WIDTH) << "[E]" 
+                 << left << setw(COL_WIDTH) << "[F]" << endl;
+            cout << "------------------------------------------------------------------------------------------------------------------------" << endl;
+
+            int startRow = (currentPage - 1) * ROWS_PER_PAGE;
+            int endRow = startRow + ROWS_PER_PAGE; 
+            if (endRow > lastActiveRow) endRow = lastActiveRow;
+
+            for (int i = startRow; i < endRow; i++) {
+                string rowClass = "Econo"; 
+                if (i < 3) rowClass = "First";      
+                else if (i < 10) rowClass = "Busin"; 
+                
+                cout << rowClass << " " << right << setw(2) << setfill('0') << (i + 1) << " "; 
+                cout << setfill(' '); 
+
+                for (int j = 0; j < COLS; j++) {
+                    string display = formatName(seatMap[i][j]); 
+                    string finalStr = "[" + display + "]";
+                    cout << left << setw(COL_WIDTH) << finalStr;
+                    if (j == 2) cout << "    "; 
+                }
+                cout << endl;
+            }
+            cout << "------------------------------------------------------------------------------------------------------------------------" << endl;
+
+            cout << "PAGE " << currentPage << " OF " << totalPages << " | Total Rows: " << lastActiveRow << endl;
+            cout << "[N] Next Page   [P] Prev Page   [0] Exit Map   [1-" << totalPages << "] Jump to Page" << endl;
+            cout << ">> Enter choice: ";
+
+            string input;
+            cin >> input;
+
+            if (input == "0") break;
+            else if (input == "n" || input == "N") {
+                if (currentPage < totalPages) currentPage++;
+            }
+            else if (input == "p" || input == "P") {
+                if (currentPage > 1) currentPage--;
+            }
+            else {
+                try {
+                    int pageChoice = stoi(input);
+                    if (pageChoice >= 1 && pageChoice <= totalPages) currentPage = pageChoice;
+                } catch (...) {}
+            }
+        }
+        cout << ">> Exiting Map View..." << endl;
     }
 
     // =========================================================
-    // [Member 4 Task] Manifest & Report - 打印名单
+    // [MANIFEST] Text Report with Interactive Pagination
     // =========================================================
     void displayManifest() override {
-        cout << "\n---------------- ARRAY MANIFEST -----------------" << endl;
-        cout << left << setw(10) << "ID" 
-             << left << setw(20) << "Name" 
-             << left << setw(10) << "Seat" 
-             << left << setw(15) << "Class" << endl;
-        cout << "-------------------------------------------------" << endl;
-
         if (currentCount == 0) {
             cout << "[System Empty]" << endl;
-        } else {
-            for (int i = 0; i < currentCount; i++) {
+            return;
+        }
+
+        int totalPages = (currentCount + MANIFEST_PER_PAGE - 1) / MANIFEST_PER_PAGE;
+        int currentPage = 1;
+
+        while (true) {
+            cout << string(50, '\n'); 
+
+            cout << "==============================================================" << endl;
+            cout << "             PASSENGER MANIFEST (SORTED LIST)                 " << endl;
+            cout << "==============================================================" << endl;
+            cout << left << setw(10) << "ID" 
+                 << left << setw(25) << "Name" 
+                 << left << setw(10) << "Seat" 
+                 << left << setw(15) << "Class" << endl;
+            cout << "--------------------------------------------------------------" << endl;
+
+            int startIndex = (currentPage - 1) * MANIFEST_PER_PAGE;
+            int endIndex = startIndex + MANIFEST_PER_PAGE;
+            if (endIndex > currentCount) endIndex = currentCount;
+
+            for (int i = startIndex; i < endIndex; i++) {
+                if (passengerList[i] == nullptr) continue;
+                
                 string fullSeat = to_string(passengerList[i]->seatRow) + passengerList[i]->seatCol;
-                cout << left << setw(10) << passengerList[i]->passengerID
-                     << left << setw(20) << passengerList[i]->name
+                cout << left << setw(10) << passengerList[i]->passengerID 
+                     << left << setw(25) << passengerList[i]->name 
                      << left << setw(10) << fullSeat
                      << left << setw(15) << passengerList[i]->flightClass << endl;
             }
+            cout << "--------------------------------------------------------------" << endl;
+            cout << "PAGE " << currentPage << " OF " << totalPages << " | Total Passengers: " << currentCount << endl;
+            cout << "[N] Next Page   [P] Prev Page   [0] Exit List   [1-" << totalPages << "] Jump to Page" << endl;
+            cout << ">> Enter choice: ";
+
+            string input;
+            cin >> input;
+
+            if (input == "0") break;
+            else if (input == "n" || input == "N") {
+                if (currentPage < totalPages) currentPage++;
+            }
+            else if (input == "p" || input == "P") {
+                if (currentPage > 1) currentPage--;
+            }
+            else {
+                try {
+                    int pageChoice = stoi(input);
+                    if (pageChoice >= 1 && pageChoice <= totalPages) currentPage = pageChoice;
+                } catch (...) {}
+            }
         }
+        cout << ">> Exiting Manifest View..." << endl;
     }
 
-    // [Member 4] Sorting - Bubble Sort
+    // =========================================================
+    // [SORTING] Bubble Sort + Interactive Pagination
+    // =========================================================
     void sortAlphabetically() override {
-        // 简单的冒泡排序，按 Name 排序
+        if (currentCount < 2) {
+            cout << ">> Not enough passengers to sort." << endl;
+            return;
+        }
+
+        cout << ">> Sorting " << currentCount << " passengers (Bubble Sort)... Please wait." << endl;
+        // Bubble Sort
         for (int i = 0; i < currentCount - 1; i++) {
             for (int j = 0; j < currentCount - i - 1; j++) {
+                if (passengerList[j] == nullptr || passengerList[j+1] == nullptr) continue; 
                 if (passengerList[j]->name > passengerList[j + 1]->name) {
-                    // 交换指针
                     Passenger* temp = passengerList[j];
                     passengerList[j] = passengerList[j + 1];
                     passengerList[j + 1] = temp;
                 }
             }
         }
-        cout << ">> [Array] Sorted by Name." << endl;
+        cout << ">> Sorting Complete!" << endl;
+        
+        // 自动调用带分页的 Manifest
+        displayManifest();
     }
 
     // [Member 3] Waitlist
