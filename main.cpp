@@ -71,8 +71,8 @@ void showSubMenu(string systemName) {
     cout << "1. Add Passenger (Reservation)" << endl;
     cout << "2. Remove Passenger (Cancellation)" << endl;
     cout << "3. Search Passenger" << endl;
-    cout << "4. Display Manifest & Seat Map" << endl;
-    cout << "5. Sort Alphabetically" << endl;
+    cout << "4. Display Seat Map" << endl;
+    cout << "5. Display Manifest" << endl;
     cout << "6. Add to Waitlist (Simulation)" << endl;
     cout << "0. Back to Main Menu" << endl;
     cout << "-------------------------------" << endl;
