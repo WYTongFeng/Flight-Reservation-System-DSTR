@@ -163,66 +163,205 @@ public:
         return nullptr;
     }
 
-// [Week 7 Task] Manifest: 打印完整名单 (美化版)
-void displayManifest() override {
-    // 1. 打印表头 (Header)
-    cout << "\n==============================================================" << endl;
-    cout << "               FLIGHT MANIFEST (LINKED LIST)                  " << endl;
-    cout << "==============================================================" << endl;
-
-    // set: 设置, w: width (宽度)
-    // left: 让文字靠左对齐 (默认是靠右)
-    cout << left << setw(10) << "ID" 
-         << left << setw(20) << "Name" 
-         << left << setw(10) << "Seat" 
-         << left << setw(15) << "Class" << endl;
-    cout << "--------------------------------------------------------------" << endl;
-
-    // 2. 准备开始遍历主名单
-    Passenger* current = head; // 定义一个指针，像手指一样指向链表的头(第一个人)
-
-    if (current == nullptr) {
-        // 如果头是空的，说明没乘客
-        cout << "[System Empty] No passengers in Main List." << endl;
-    } else {
-        // 3. 循环遍历 (While Loop)
-        while (current != nullptr) {
-            // 拼凑座位号: 比如 Row 1 和 Col "A" -> 变成 "1A"
-            string fullSeat = to_string(current->seatRow) + current->seatCol;
-
-            // 打印这一行的数据，保持和表头一样的宽度
-            cout << left << setw(10) << current->passengerID
-                 << left << setw(20) << current->name
-                 << left << setw(10) << fullSeat
-                 << left << setw(15) << current->flightClass << endl;
-            
-            // 4. 关键步骤：指针后移 (Move to next)
-            current = current->next; 
+// =========================================================
+    // [MANIFEST] Text Report with Interactive Pagination (LL Version)
+    // 完全复刻 ArraySystem 的 UI 和交互逻辑
+    // =========================================================
+    void displayManifest() override {
+        // 1. 统计总人数 (LL 必须先遍历一次)
+        int currentCount = 0;
+        Passenger* temp = head;
+        while (temp != nullptr) {
+            currentCount++;
+            temp = temp->next;
         }
+
+        if (currentCount == 0) {
+            cout << "[System Empty]" << endl;
+            return;
+        }
+
+        // 2. 计算页数
+        int totalPages = (currentCount + FlightGlobal::MANIFEST_PER_PAGE - 1) / FlightGlobal::MANIFEST_PER_PAGE;
+        int currentPage = 1;
+
+        // 3. 交互循环 (While True)
+        while (true) {
+            cout << string(50, '\n'); // 清屏模拟
+
+            cout << "==============================================================" << endl;
+            cout << "             PASSENGER MANIFEST (LINKED LIST)                 " << endl;
+            cout << "==============================================================" << endl;
+            cout << left << setw(10) << "ID" 
+                 << left << setw(25) << "Name" 
+                 << left << setw(10) << "Seat" 
+                 << left << setw(15) << "Class" << endl;
+            cout << "--------------------------------------------------------------" << endl;
+
+            // --- 链表定位逻辑 (核心不同点) ---
+            int startIndex = (currentPage - 1) * FlightGlobal::MANIFEST_PER_PAGE;
+            int endIndex = startIndex + FlightGlobal::MANIFEST_PER_PAGE;
+            if (endIndex > currentCount) endIndex = currentCount;
+
+            // 让指针跳到当前页的起点 (Skip)
+            Passenger* current = head;
+            for (int i = 0; i < startIndex; i++) {
+                if (current != nullptr) current = current->next;
+            }
+
+            // 打印这一页的数据
+            for (int i = startIndex; i < endIndex; i++) {
+                if (current == nullptr) break;
+                
+                string fullSeat = to_string(current->seatRow) + current->seatCol;
+                cout << left << setw(10) << current->passengerID 
+                     << left << setw(25) << current->name 
+                     << left << setw(10) << fullSeat
+                     << left << setw(15) << current->flightClass << endl;
+                
+                current = current->next;
+            }
+
+            // --- 底部菜单 (完全一致) ---
+            cout << "--------------------------------------------------------------" << endl;
+            cout << "PAGE " << currentPage << " OF " << totalPages << " | Total Passengers: " << currentCount << endl;
+            cout << "[N] Next Page   [P] Prev Page   [0] Exit List   [1-" << totalPages << "] Jump to Page" << endl;
+            cout << ">> Enter choice: ";
+
+            string input;
+            cin >> input;
+
+            if (input == "0") break;
+            else if (input == "n" || input == "N") {
+                if (currentPage < totalPages) currentPage++;
+            }
+            else if (input == "p" || input == "P") {
+                if (currentPage > 1) currentPage--;
+            }
+            else {
+                try {
+                    int pageChoice = stoi(input);
+                    if (pageChoice >= 1 && pageChoice <= totalPages) currentPage = pageChoice;
+                } catch (...) {}
+            }
+        }
+        cout << ">> Exiting Manifest View..." << endl;
     }
 
-    // 5. 打印候补名单 (Waitlist)
-    cout << "\n------------------------- WAITLIST ---------------------------" << endl;
-    Passenger* w = waitlistHead; // 让手指指向候补名单的头
-
-    if (w == nullptr) {
-        cout << "(Waitlist is Empty)" << endl;
-    } else {
-        while (w != nullptr) {
-             cout << left << setw(10) << w->passengerID
-                 << left << setw(20) << w->name
-                 << left << setw(10) << "WAITING" // 候补没有座位，写死 WAITING
-                 << left << setw(15) << w->flightClass << endl;
-            
-            w = w->next; // 别忘了移动指针！否则会死循环
-        }
-    }
-    cout << "==============================================================" << endl;
-}
-
-    // Leader 不需要负责 Map，留空
+// =========================================================
+    // [SEAT MAP] Visual Map with Interactive Pagination (LL Version)
+    // 完全复刻 ArraySystem 的 UI 和交互逻辑
+    // =========================================================
     void displaySeatingMap() override {
-        cout << "[LL] Map not available (Array team's job)." << endl;
+        // 1. 找出最大行数 (模拟 Array 的 maxRows)
+        int maxRowFound = 0;
+        Passenger* p = head;
+        while (p != nullptr) {
+            if (p->seatRow > maxRowFound) maxRowFound = p->seatRow;
+            p = p->next;
+        }
+        // 至少显示 20 行，与 ArraySystem 逻辑保持一致
+        if (maxRowFound < 20) maxRowFound = 20;
+
+        // 2. 构建临时地图 (因为链表查坐标太慢，必须用临时数组辅助)
+        string** tempMap = new string*[maxRowFound];
+        for (int i = 0; i < maxRowFound; i++) {
+            tempMap[i] = new string[FlightGlobal::COLS];
+            for (int j = 0; j < FlightGlobal::COLS; j++) tempMap[i][j] = "EMPTY"; // 默认 EMPTY
+        }
+
+        // 填入数据
+        p = head;
+        while (p != nullptr) {
+            int r = p->seatRow - 1;
+            int c = FlightGlobal::getColIndex(p->seatCol);
+            if (r >= 0 && r < maxRowFound && c != -1) {
+                tempMap[r][c] = p->name; // 存名字
+            }
+            p = p->next;
+        }
+
+        // 3. 计算 lastActiveRow (完全复刻 Array 逻辑)
+        int lastActiveRow = 0;
+        for(int i = maxRowFound - 1; i >= 0; i--) {
+            bool empty = true;
+            for(int j=0; j<FlightGlobal::COLS; j++) {
+                if(tempMap[i][j] != "EMPTY") { empty = false; break; }
+            }
+            if(!empty) { lastActiveRow = i + 1; break; }
+        }
+        if (lastActiveRow < 20) lastActiveRow = 20;
+
+        // 4. 分页计算
+        int totalPages = (lastActiveRow + FlightGlobal::ROWS_PER_PAGE - 1) / FlightGlobal::ROWS_PER_PAGE;
+        int currentPage = 1;
+
+        // 5. 交互循环
+        while (true) {
+            cout << string(50, '\n'); 
+
+            cout << "========================================================================================================================" << endl;
+            cout << "                                              FLIGHT SEATING MAP (LINKED LIST)                                          " << endl;
+            cout << "========================================================================================================================" << endl;
+            cout << "         " 
+                 << left << setw(FlightGlobal::COL_WIDTH) << "[A]" 
+                 << left << setw(FlightGlobal::COL_WIDTH) << "[B]" 
+                 << left << setw(FlightGlobal::COL_WIDTH) << "[C]" 
+                 << "    " 
+                 << left << setw(FlightGlobal::COL_WIDTH) << "[D]" 
+                 << left << setw(FlightGlobal::COL_WIDTH) << "[E]" 
+                 << left << setw(FlightGlobal::COL_WIDTH) << "[F]" << endl;
+            cout << "------------------------------------------------------------------------------------------------------------------------" << endl;
+
+            int startRow = (currentPage - 1) * FlightGlobal::ROWS_PER_PAGE;
+            int endRow = startRow + FlightGlobal::ROWS_PER_PAGE;
+            if (endRow > lastActiveRow) endRow = lastActiveRow;
+
+            for (int i = startRow; i < endRow; i++) {
+                string rowClass = "Econo"; 
+                if (i < 3) rowClass = "First";      
+                else if (i < 10) rowClass = "Busin"; 
+                
+                cout << rowClass << " " << right << setw(2) << setfill('0') << (i + 1) << " "; 
+                cout << setfill(' '); 
+
+                for (int j = 0; j < FlightGlobal::COLS; j++) {
+                    string display = FlightGlobal::formatName(tempMap[i][j]); 
+                    string finalStr = "[" + display + "]";
+                    cout << left << setw(FlightGlobal::COL_WIDTH) << finalStr;
+                    if (j == 2) cout << "    "; // 过道
+                }
+                cout << endl;
+            }
+            cout << "------------------------------------------------------------------------------------------------------------------------" << endl;
+
+            cout << "PAGE " << currentPage << " OF " << totalPages << " | Total Rows: " << lastActiveRow << endl;
+            cout << "[N] Next Page   [P] Prev Page   [0] Exit Map   [1-" << totalPages << "] Jump to Page" << endl;
+            cout << ">> Enter choice: ";
+
+            string input;
+            cin >> input;
+
+            if (input == "0") break;
+            else if (input == "n" || input == "N") {
+                if (currentPage < totalPages) currentPage++;
+            }
+            else if (input == "p" || input == "P") {
+                if (currentPage > 1) currentPage--;
+            }
+            else {
+                try {
+                    int pageChoice = stoi(input);
+                    if (pageChoice >= 1 && pageChoice <= totalPages) currentPage = pageChoice;
+                } catch (...) {}
+            }
+        }
+
+        // 清理临时内存
+        for (int i = 0; i < maxRowFound; i++) delete[] tempMap[i];
+        delete[] tempMap;
+
+        cout << ">> Exiting Map View..." << endl;
     }
 
 // [Member 4 Task] Sorting - Bubble Sort (Week 8)
