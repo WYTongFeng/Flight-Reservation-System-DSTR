@@ -139,7 +139,7 @@ ArraySystem() {
 
         // 3. Sync with 2D Seat Map: Clear the name on the map
         int rIndex = passengerList[index]->seatRow - 1;
-        int cIndex = getColIndex(passengerList[index]->seatCol);
+        int cIndex = FlightGlobal::getColIndex(passengerList[index]->seatCol);
         if (rIndex >= 0 && rIndex < maxRows && cIndex != -1) {
             seatMap[rIndex][cIndex] = "EMPTY"; 
         }
