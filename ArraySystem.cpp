@@ -12,12 +12,7 @@ using namespace std;
 // ==========================================
 // 系统配置
 // ==========================================
-const int COLS = 6;
-// 每页显示行数 (你可以改成 5 或 15)
-const int ROWS_PER_PAGE = 10; 
-const int MANIFEST_PER_PAGE = 15; // Manifest 每页显示 15 人
-// 列宽：加大到 20 以显示全名
-const int COL_WIDTH = 22; 
+
 
 class ArraySystem : public FlightSystem {
 private:
@@ -27,42 +22,21 @@ private:
     int passengerCapacity; 
     int currentCount;      
 
-    // Helper: 列转换
-    int getColIndex(string col) {
-        if (col == "A") return 0;
-        if (col == "B") return 1;
-        if (col == "C") return 2;
-        if (col == "D") return 3;
-        if (col == "E") return 4;
-        if (col == "F") return 5;
-        return -1;
-    }
-    string getColName(int index) {
-        string cols[] = {"A", "B", "C", "D", "E", "F"};
-        return cols[index];
-    }
-
-    // Helper: 名字处理
-    string formatName(string name) {
-        if (name == "EMPTY") return "---";
-        return name;
-    }
-
     // 自动扩容 - Map
-    void expandSeatMap(int requiredRow) {
-        if (requiredRow <= maxRows) return;
-        int newMax = maxRows * 2; 
-        if (newMax < requiredRow) newMax = requiredRow + 10;
+void expandSeatMap(int requiredRow) {
+    if (requiredRow <= maxRows) return;
+    int newMax = maxRows * 2; 
+    if (newMax < requiredRow) newMax = requiredRow + 10;
 
-        string** newMap = new string*[newMax];
-        for (int i = 0; i < newMax; i++) {
-            newMap[i] = new string[COLS];
-            for (int j = 0; j < COLS; j++) newMap[i][j] = "EMPTY"; 
-        }
+    string** newMap = new string*[newMax];
+    for (int i = 0; i < newMax; i++) {
+        newMap[i] = new string[FlightGlobal::COLS]; // 改这里
+        for (int j = 0; j < FlightGlobal::COLS; j++) newMap[i][j] = "EMPTY"; // 改这里
+    }
 
-        for (int i = 0; i < maxRows; i++) {
-            for (int j = 0; j < COLS; j++) newMap[i][j] = seatMap[i][j];
-        }
+    for (int i = 0; i < maxRows; i++) {
+        for (int j = 0; j < FlightGlobal::COLS; j++) newMap[i][j] = seatMap[i][j]; // 改这里
+    }
         for (int i = 0; i < maxRows; i++) delete[] seatMap[i];
         delete[] seatMap;
 
@@ -83,22 +57,22 @@ private:
 
 public:
     // 1. Constructor
-    ArraySystem() {
-        currentCount = 0;
-        maxRows = 50; 
-        passengerCapacity = 200; 
+ArraySystem() {
+    currentCount = 0;
+    maxRows = 50; 
+    passengerCapacity = 200; 
 
-        seatMap = new string*[maxRows];
-        for (int i = 0; i < maxRows; i++) {
-            seatMap[i] = new string[COLS];
-            for (int j = 0; j < COLS; j++) seatMap[i][j] = "EMPTY";
-        }
-
-        passengerList = new Passenger*[passengerCapacity];
-        for(int i=0; i<passengerCapacity; i++) passengerList[i] = nullptr;
-
-        cout << ">> Array System Initialized." << endl;
+    seatMap = new string*[maxRows];
+    for (int i = 0; i < maxRows; i++) {
+        seatMap[i] = new string[FlightGlobal::COLS]; 
+        for (int j = 0; j < FlightGlobal::COLS; j++) seatMap[i][j] = "EMPTY"; 
     }
+
+    passengerList = new Passenger*[passengerCapacity];
+    for(int i=0; i<passengerCapacity; i++) passengerList[i] = nullptr;
+
+    cout << ">> Array System Initialized." << endl;
+}
 
     ~ArraySystem() {
         for (int i = 0; i < maxRows; i++) delete[] seatMap[i];
@@ -116,7 +90,7 @@ public:
         if (currentCount >= passengerCapacity) expandPassengerList();
 
         int rIndex = row - 1;
-        int cIndex = getColIndex(col);
+        int cIndex = FlightGlobal::getColIndex(col); // 加上 FlightGlobal::
 
         if (rIndex < 0 || cIndex == -1) return;
 
@@ -203,14 +177,14 @@ public:
         int lastActiveRow = 0;
         for(int i = maxRows - 1; i >= 0; i--) {
             bool empty = true;
-            for(int j=0; j<COLS; j++) {
+            for(int j=0; j<FlightGlobal::COLS; j++) {
                 if(seatMap[i][j] != "EMPTY") { empty = false; break; }
             }
             if(!empty) { lastActiveRow = i + 1; break; }
         }
         if (lastActiveRow < 20) lastActiveRow = 20; 
 
-        int totalPages = (lastActiveRow + ROWS_PER_PAGE - 1) / ROWS_PER_PAGE;
+        int totalPages = (lastActiveRow + FlightGlobal::ROWS_PER_PAGE - 1) / FlightGlobal::ROWS_PER_PAGE;
         int currentPage = 1;
 
         while (true) {
@@ -220,17 +194,17 @@ public:
             cout << "                                              FLIGHT SEATING MAP (FULL VIEW)                                            " << endl;
             cout << "========================================================================================================================" << endl;
             cout << "         " 
-                 << left << setw(COL_WIDTH) << "[A]" 
-                 << left << setw(COL_WIDTH) << "[B]" 
-                 << left << setw(COL_WIDTH) << "[C]" 
+                 << left << setw(FlightGlobal::COL_WIDTH) << "[A]" 
+                 << left << setw(FlightGlobal::COL_WIDTH) << "[B]" 
+                 << left << setw(FlightGlobal::COL_WIDTH) << "[C]" 
                  << "    " 
-                 << left << setw(COL_WIDTH) << "[D]" 
-                 << left << setw(COL_WIDTH) << "[E]" 
-                 << left << setw(COL_WIDTH) << "[F]" << endl;
+                 << left << setw(FlightGlobal::COL_WIDTH) << "[D]" 
+                 << left << setw(FlightGlobal::COL_WIDTH) << "[E]" 
+                 << left << setw(FlightGlobal::COL_WIDTH) << "[F]" << endl;
             cout << "------------------------------------------------------------------------------------------------------------------------" << endl;
 
-            int startRow = (currentPage - 1) * ROWS_PER_PAGE;
-            int endRow = startRow + ROWS_PER_PAGE; 
+            int startRow = (currentPage - 1) * FlightGlobal::ROWS_PER_PAGE;
+            int endRow = startRow + FlightGlobal::ROWS_PER_PAGE; 
             if (endRow > lastActiveRow) endRow = lastActiveRow;
 
             for (int i = startRow; i < endRow; i++) {
@@ -241,10 +215,10 @@ public:
                 cout << rowClass << " " << right << setw(2) << setfill('0') << (i + 1) << " "; 
                 cout << setfill(' '); 
 
-                for (int j = 0; j < COLS; j++) {
-                    string display = formatName(seatMap[i][j]); 
+                for (int j = 0; j < FlightGlobal::COLS; j++) {
+                    string display = FlightGlobal::formatName(seatMap[i][j]); 
                     string finalStr = "[" + display + "]";
-                    cout << left << setw(COL_WIDTH) << finalStr;
+                    cout << left << setw(FlightGlobal::COL_WIDTH) << finalStr;
                     if (j == 2) cout << "    "; 
                 }
                 cout << endl;
@@ -284,7 +258,7 @@ public:
             return;
         }
 
-        int totalPages = (currentCount + MANIFEST_PER_PAGE - 1) / MANIFEST_PER_PAGE;
+        int totalPages = (currentCount + FlightGlobal::MANIFEST_PER_PAGE - 1) / FlightGlobal::MANIFEST_PER_PAGE;
         int currentPage = 1;
 
         while (true) {
@@ -299,8 +273,8 @@ public:
                  << left << setw(15) << "Class" << endl;
             cout << "--------------------------------------------------------------" << endl;
 
-            int startIndex = (currentPage - 1) * MANIFEST_PER_PAGE;
-            int endIndex = startIndex + MANIFEST_PER_PAGE;
+            int startIndex = (currentPage - 1) * FlightGlobal::MANIFEST_PER_PAGE;
+            int endIndex = startIndex + FlightGlobal::MANIFEST_PER_PAGE;
             if (endIndex > currentCount) endIndex = currentCount;
 
             for (int i = startIndex; i < endIndex; i++) {

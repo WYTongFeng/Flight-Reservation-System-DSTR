@@ -3,6 +3,9 @@
 
 #include <string>
 #include <iostream>
+#include <iomanip>
+#include <limits> // 用于 numeric_limits
+#include <cmath>  // 用于 ceil
 
 using namespace std;
 
@@ -30,7 +33,47 @@ struct Passenger {
 };
 
 // ==========================================
-// 2. 系统接口 (System Interface)
+// 2. 全局配置与工具 (FlightGlobal)
+//    Array 和 LL 组共用这一套设置
+// ==========================================
+namespace FlightGlobal {
+    
+    // --- 常量配置 (Constants) ---
+    const int COLS = 6;
+    const int ROWS_PER_PAGE = 10;       // 座位图每页显示 10 行
+    const int MANIFEST_PER_PAGE = 15;   // 名单每页显示 15 人
+    const int COL_WIDTH = 22;           // 名字列宽加大
+    const int DEFAULT_MAX_ROWS = 50;    // 默认最大行数
+
+    // --- 工具函数 (Helpers) ---
+
+    // 1. 获取列名 (0 -> "A")
+    inline string getColName(int index) {
+        string cols[] = {"A", "B", "C", "D", "E", "F"};
+        if (index >= 0 && index < 6) return cols[index];
+        return "?";
+    }
+
+    // 2. 获取列索引 ("A" -> 0)
+    inline int getColIndex(string col) {
+        if (col == "A") return 0;
+        if (col == "B") return 1;
+        if (col == "C") return 2;
+        if (col == "D") return 3;
+        if (col == "E") return 4;
+        if (col == "F") return 5;
+        return -1;
+    }
+
+    // 3. 格式化名字显示 (处理空位)
+    inline string formatName(string name) {
+        if (name == "" || name == "EMPTY") return "---";
+        return name;
+    }
+}
+
+// ==========================================
+// 3. 系统接口 (System Interface)
 // 抽象基类：强制 Array 和 Linked List 组实现相同的功能
 // ==========================================
 class FlightSystem {
