@@ -1,4 +1,6 @@
 #include "FlightCommon.hpp"
+#include <fstream>
+#include <sstream>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -145,14 +147,52 @@ public:
 
     // [Function 2] Remove Passenger
     bool removePassenger(string id) override {
-        // TODO: 写在这里：从数组删除
-        cout << "[Array] Remove Passenger not implemented yet." << endl;
-        return false;
+        int index = -1;
+        
+        // 1. Linear Search: Find the passenger's position
+        for (int i = 0; i < currentCount; i++) {
+            if (passengerList[i] != nullptr && passengerList[i]->passengerID == id) {
+                index = i;
+                break;
+            }
+        }
+
+        // 2. If not found, we use your original logic or a fail message
+        if (index == -1) {
+            cout << "[Array] Remove Passenger failed: ID not found." << endl;
+            return false;
+        }
+
+        // 3. Sync with 2D Seat Map: Clear the name on the map
+        int rIndex = passengerList[index]->seatRow - 1;
+        int cIndex = getColIndex(passengerList[index]->seatCol);
+        if (rIndex >= 0 && rIndex < maxRows && cIndex != -1) {
+            seatMap[rIndex][cIndex] = "EMPTY"; 
+        }
+
+        // 4. Delete object and Shift elements (The core Member 2 task)
+        delete passengerList[index]; 
+        for (int i = index; i < currentCount - 1; i++) {
+            passengerList[i] = passengerList[i + 1]; 
+        }
+        passengerList[currentCount - 1] = nullptr; 
+        currentCount--;
+
+        cout << "[Array] Success: Passenger " << id << " removed." << endl;
+        return true;
     }
+
     // [Function 3] Search Passenger
     Passenger* searchPassenger(const string& id) override {
-        // TODO: 写在这里：线性查找
-        cout << "[Array] Search Passenger not implemented yet." << endl;
+        // Linear Search logic
+        for (int i = 0; i < currentCount; i++) {
+            if (passengerList[i] != nullptr && passengerList[i]->passengerID == id) {
+                cout << "[Array] Passenger " << id << " found." << endl;
+                return passengerList[i]; 
+            }
+        }
+        
+        cout << "[Array] Search: ID " << id << " not found." << endl;
         return nullptr;
     }
 
