@@ -31,46 +31,48 @@ public:
     // ==========================================
     // Function 1: Reservation (Insertion)
     // ==========================================
-    void addPassenger(string id, string name, int row, string col, string fclass) override {
-        // CRITICAL PERFORMANCE COMPARISON:
-        // In Array, checking a seat is O(1).
-        // In Linked List, we MUST traverse the entire list to see if the seat is taken. O(N).
-        
-        Passenger* temp = head;
-        while (temp != nullptr) {
-            if (temp->seatRow == row && temp->seatCol == col) {
-                cout << ">> [Failed] Seat " << row << col << " is already occupied by " << temp->name << "." << endl;
-                return; // Stop if seat is taken
-            }
-            if (temp->passengerID == id) {
-                cout << ">> [Failed] Passenger ID " << id << " already exists." << endl;
-                return; // Stop if ID exists
-            }
-            temp = temp->next;
+void addPassenger(string id, string name, int row, string col, string fclass) override {
+    
+    Passenger* temp = head;
+    
+    // TRAVERSAL CHECK (O(N))
+    // We check BOTH "Seat Collision" and "Duplicate ID" in one pass.
+    while (temp != nullptr) {
+        // Check Seat
+        if (temp->seatRow == row && temp->seatCol == col) {
+            cout << ">> [Failed] Seat " << row << col << " is already occupied by " << temp->name << "." << endl;
+            return; 
         }
-
-        // If safe, create new node
-        Passenger* newP = new Passenger;
-        newP->passengerID = id;
-        newP->name = name;
-        newP->seatRow = row;
-        newP->seatCol = col;
-        newP->flightClass = fclass;
-        newP->next = nullptr;
-        newP->prev = nullptr;
-
-        // Append to Doubly Linked List (Insert at Tail)
-        if (head == nullptr) {
-            head = newP;
-            tail = newP;
-        } else {
-            tail->next = newP;   // Link old tail to new node
-            newP->prev = tail;   // Link new node back to old tail
-            tail = newP;         // Update tail pointer
+        // Check ID
+        if (temp->passengerID == id) {
+            cout << ">> [Failed] Passenger ID " << id << " already exists." << endl;
+            return; 
         }
-        currentCount++;
-        cout << ">> [Success] Passenger " << name << " (" << id << ") added to linked list." << endl;
+        temp = temp->next;
     }
+
+    // If we get here, it's safe to add.
+    Passenger* newP = new Passenger;
+    newP->passengerID = id;
+    newP->name = name;
+    newP->seatRow = row;
+    newP->seatCol = col;
+    newP->flightClass = fclass;
+    newP->next = nullptr;
+    newP->prev = nullptr;
+
+    // Append to Tail (O(1) with tail pointer)
+    if (head == nullptr) {
+        head = newP;
+        tail = newP;
+    } else {
+        tail->next = newP;
+        newP->prev = tail;
+        tail = newP;
+    }
+    currentCount++;
+    cout << ">> [Success] Passenger " << name << " (" << id << ") added to linked list." << endl;
+}
 
     // ==========================================
     // Function 2: Cancellation (Deletion)

@@ -84,7 +84,7 @@ public:
 
     // [Function 1] Reservation
     void addPassenger(string id, string name, int row, string col, string fclass) override {
-        // 1. Check Row Validity & Expand if needed
+    // 1. Check Row Validity & Expand if needed
         if (row > maxRows) expandSeatMap(row);
         
         int rIndex = row - 1;
@@ -95,16 +95,25 @@ public:
             return;
         }
 
-        // 2. CHECK FOR COLLISION FIRST (Fixes the "Ghost Passenger" bug)
+        // 2. SEAT COLLISION CHECK (O(1))
         if (seatMap[rIndex][cIndex] != "EMPTY") {
             cout << ">> [Failed] Seat " << row << col << " is already occupied by " << seatMap[rIndex][cIndex] << "." << endl;
-            return; // Do NOT add to passengerList
+            return;
         }
 
-        // 3. Check List Capacity
+        // 3. ID UNIQUENESS CHECK (New Feature! O(N))
+        // We must loop through the existing list to ensure this ID doesn't exist.
+        for (int i = 0; i < currentCount; i++) {
+            if (passengerList[i]->passengerID == id) {
+                cout << ">> [Failed] Passenger ID " << id << " already exists (Holder: " << passengerList[i]->name << ")." << endl;
+                return;
+            }
+        }
+
+        // 4. Check List Capacity
         if (currentCount >= passengerCapacity) expandPassengerList();
 
-        // 4. Create and Add Passenger
+        // 5. Create and Add Passenger
         Passenger* newP = new Passenger;
         newP->passengerID = id;
         newP->name = name;
