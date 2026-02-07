@@ -1,6 +1,9 @@
 #include "FlightCommon.hpp"
 #include <iostream>
 #include <iomanip> // 必须加这个才能用 setw (设置宽度)
+#include <chrono>
+using namespace std::chrono;
+
 
 using namespace std;
 
@@ -14,12 +17,15 @@ private:
     Passenger* waitlistHead;
     Passenger* waitlistTail;
 
+    int nextIdCounter;
+
 public:
     LinkedListSystem() {
         head = nullptr;
         tail = nullptr;
         waitlistHead = nullptr;
         waitlistTail = nullptr;
+        nextIdCounter = 100000;
         cout << ">> Linked List System Initialized (Leader Ready)." << endl;
     }
 
@@ -43,28 +49,58 @@ public:
 
     // [Week 7 Task] 1. Doubly LL Insert (主名单加人) [cite: 22]
     void addPassenger(string id, string name, int row, string col, string fclass) override {
-        Passenger* newP = new Passenger;
-        newP->passengerID = id;
-        newP->name = name;
-        newP->seatRow = row;
-        newP->seatCol = col;
-        newP->flightClass = fclass;
-        
-        newP->next = nullptr;
-        newP->prev = nullptr;
 
-        if (head == nullptr) {
-            // 链表是空的
-            head = newP;
-            tail = newP;
-        } else {
-            // 插入到末尾 (Append)
-            tail->next = newP;   // 旧尾巴指向新节点
-            newP->prev = tail;   // 新节点指回旧尾巴
-            tail = newP;         // 更新尾巴指针
-        }
+    auto start_time = high_resolution_clock::now();
+
+    // --- ID 逻辑：CSV 同步 + 手动自动生成 ---
+    string finalID;
+    if (!id.empty()) {
+        finalID = id;
+        try {
+            int idNum = stoi(id);
+            if (idNum >= nextIdCounter) nextIdCounter = idNum + 1;
+        } catch (...) {}
+    } else {
+        finalID = to_string(nextIdCounter++);
+    }
+
+    Passenger* newP = new Passenger;
+    newP->passengerID = finalID;
+    newP->name = name;
+    newP->seatRow = row;
+    newP->seatCol = col;
+    newP->flightClass = fclass;
+
+    newP->next = nullptr;
+    newP->prev = nullptr;
+
+    // --- Doubly linked list append ---
+    if (head == nullptr) {
+        head = newP;
+        tail = newP;
+    } else {
+        tail->next = newP;
+        newP->prev = tail;
+        tail = newP;
+    }
+
+    auto stop_time = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop_time - start_time);
+
+    // --- 只有手动 add 才显示 stats ---
+    if (id.empty()) {
+        size_t memoryUsed = sizeof(Passenger) + sizeof(Passenger*); 
+        cout << "----------------------------------------------------" << endl;
+        cout << "✅ [LL] Passenger Added Successfully!" << endl;
+        cout << "   [+] Assigned ID  : " << finalID << endl;
+        cout << "   [+] Time Taken   : " << duration.count() << " us (Linear Search)" << endl;
+        cout << "   [+] Memory Used  : " << memoryUsed << " bytes" << endl;
+        cout << "----------------------------------------------------" << endl;
+    } else {
         cout << ">> [LL] Passenger " << name << " added to Main List." << endl;
     }
+}
+
 
     // [Week 7 Task] 2. Doubly LL Delete (主名单删人 + 自动候补转正) [cite: 21, 24]
     bool removePassenger(string id) override {
@@ -368,6 +404,8 @@ public:
     // 使用 "Data Swap" (只换数据，不换节点) 的方式，最安全
     void sortAlphabetically() override {
         // 1. 安全检查：如果链表是空的，或者只有1个人，那就不需要排序
+        cout << ">>> [DEBUG] LinkedListSystem::sortAlphabetically() CALLED\n";
+
         if (head == nullptr || head->next == nullptr) {
             cout << ">> [LL] List is empty or has only 1 passenger. No sort needed." << endl;
             return;

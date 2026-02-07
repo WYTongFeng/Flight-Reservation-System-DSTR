@@ -39,29 +39,28 @@ struct Passenger {
 namespace FlightGlobal {
     
     // --- 常量配置 (Constants) ---
-    const int COLS = 6;
-    const int ROWS_PER_PAGE = 10;       // 座位图每页显示 10 行
-    const int MANIFEST_PER_PAGE = 15;   // 名单每页显示 15 人
-    const int COL_WIDTH = 22;           // 名字列宽加大
-    const int DEFAULT_MAX_ROWS = 50;    // 默认最大行数
+    const int COLS = 6;             // 改回 6 列 (A-F)
+    const int COL_WIDTH = 15;       // 宽度 15，刚好够显示名字，又不会炸屏
+    const int ROWS_PER_PAGE = 15;   // 每页显示 15 行
+    const int MANIFEST_PER_PAGE = 15;
+    const int DEFAULT_MAX_ROWS = 60; // 正常飞机大概 50-60 行
 
     // --- 工具函数 (Helpers) ---
 
-    // 1. 获取列名 (0 -> "A")
-    inline string getColName(int index) {
-        string cols[] = {"A", "B", "C", "D", "E", "F"};
-        if (index >= 0 && index < 6) return cols[index];
-        return "?";
+    inline string getColString(int index) {
+        if (index < 0 || index >= COLS) return "?";
+        char c = 'A' + index;
+        return string(1, c);
     }
+
+    // 1. 获取列名 (0 -> "A")
+    inline string getColName(int index) { return getColString(index); }
 
     // 2. 获取列索引 ("A" -> 0)
     inline int getColIndex(string col) {
-        if (col == "A") return 0;
-        if (col == "B") return 1;
-        if (col == "C") return 2;
-        if (col == "D") return 3;
-        if (col == "E") return 4;
-        if (col == "F") return 5;
+        if (col.empty()) return -1;
+        char c = toupper(col[0]);
+        if (c >= 'A' && c <= 'F') return c - 'A'; // 只允许 A-F
         return -1;
     }
 
@@ -104,7 +103,7 @@ public:
     // --- 额外算法与特殊要求 ---
 
     // [Requirement] Sorting Algorithm
-    // ⚠️ 规则: 必须都使用 Bubble Sort (冒泡排序) 按名字 A-Z 排序
+    // ⚠️ 规则: 必须都使用 Bubble Sort (冒泡排序) 按名字 A-F 排序
     virtual void sortAlphabetically() = 0;
 
     // [Requirement] Singly Linked List (候补名单)

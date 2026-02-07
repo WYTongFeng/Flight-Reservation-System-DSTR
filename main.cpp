@@ -5,6 +5,9 @@
 #include <sstream>
 #include <vector>
 
+#include <algorithm> // ✅ for transform
+#include <cctype>    // ✅ for tolower/toupper
+
 // 引入我们的核心头文件
 #include "FlightCommon.hpp"
 #include "Timer.hpp"
@@ -16,6 +19,65 @@
 
 using namespace std;
 
+// ===============================
+// ✅ Input Validation Helpers
+// ===============================
+
+// 把字符串转小写
+string toLowerStr(string s) {
+    transform(s.begin(), s.end(), s.begin(),
+              [](unsigned char c){ return (char)tolower(c); });
+    return s;
+}
+
+// 读取 row（强制 1-30）
+int readRow_1to30() {
+    int row;
+    while (true) {
+        cout << "Enter Row (1-30): ";
+        if (cin >> row && row >= 1 && row <= 30) return row;
+
+        cout << ">> [Error] Row must be between 1 and 30.\n";
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    }
+}
+
+// 读取 col（强制 A-F，自动把 a->A）
+string readCol_AtoF() {
+    string col;
+    while (true) {
+        cout << "Enter Col (A-F): ";
+        cin >> col;
+
+        if (!col.empty()) {
+            char c = (char)toupper((unsigned char)col[0]);
+            if (c >= 'A' && c <= 'F') return string(1, c);
+        }
+        cout << ">> [Error] Column must be A, B, C, D, E, or F.\n";
+    }
+}
+
+// 读取 class（强制 First/Business/Economy，接受 first/business/economic 等写法）
+string readClass_FBE() {
+    string fclass;
+    while (true) {
+        cout << "Enter Class (First/Business/Economy): ";
+        cin >> fclass;
+
+        string x = toLowerStr(fclass);
+
+        if (x == "first") return "First";
+        if (x == "business" || x == "busin") return "Business";
+        if (x == "economy" || x == "economic" || x == "econo") return "Economy";
+
+        cout << ">> [Error] Class must be First, Business, or Economy.\n";
+    }
+}
+
+// ===============================
+// 读取 CSV 数据
+// ===============================
 void loadData(FlightSystem* sys, string filename) {
     ifstream file(filename);
     if (!file.is_open()) {
@@ -24,33 +86,34 @@ void loadData(FlightSystem* sys, string filename) {
     }
 
     string line;
-    // 跳过第一行标题 (如果有的话，看你的CSV内容而定，通常都有header)
-    getline(file, line); 
+    getline(file, line); // 跳过标题行
 
     int count = 0;
     while (getline(file, line)) {
         stringstream ss(line);
         string id, name, rowStr, col, fclass;
-        
-        // 假设 CSV 格式是: ID,Name,Row,Col,Class
-        // 你需要根据实际 CSV 格式调整这里的顺序
+
         getline(ss, id, ',');
         getline(ss, name, ',');
         getline(ss, rowStr, ',');
         getline(ss, col, ',');
-        getline(ss, fclass, ','); // 如果后面还有 \r 记得处理，不过 stringstream 通常还好
+        getline(ss, fclass, ',');
+
+        // ✅ 去除 Windows \r，避免 col / class 变成 "A\r"
+        if (!col.empty() && col.back() == '\r') col.pop_back();
+        if (!fclass.empty() && fclass.back() == '\r') fclass.pop_back();
 
         if (!id.empty()) {
             try {
                 int row = stoi(rowStr);
-                // 调用你刚刚写好的 addPassenger
-                sys->addPassenger(id, name, row, col, fclass);
+                sys->addPassenger(id, name, row, col, fclass); // CSV 旧数据
                 count++;
             } catch (...) {
-                // 防止 stoi 报错
+                // stoi 失败就跳过
             }
         }
     }
+
     cout << ">> Loaded " << count << " passengers from " << filename << endl;
     file.close();
 }
@@ -82,54 +145,75 @@ void showSubMenu(string systemName) {
 // 驱动函数：处理具体的业务逻辑
 void runSystem(FlightSystem* sys, string name) {
     int choice;
+    string id, pname, seatCol, fclass;
+    int row;
+
+    cout << ">> Running system pointer=" << sys << " (" << name << ")\n"; // ✅ 加在这里
+
     do {
         showSubMenu(name);
-        if (!(cin >> choice)) { // 防止输入字符导致死循环
+        if (!(cin >> choice)) {
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             choice = -1;
         }
 
-        string id, pname, seatCol, fclass;
-        int row;
-
         switch (choice) {
-            case 1: // Add
-                cout << "Enter ID: "; cin >> id;
-                cout << "Enter Name: "; cin.ignore(); getline(cin, pname); // 允许名字带空格
-                cout << "Enter Row (1-100): "; cin >> row;
-                cout << "Enter Col (A-F): "; cin >> seatCol;
-                cout << "Enter Class: "; cin >> fclass;
-                sys->addPassenger(id, pname, row, seatCol, fclass);
+            case 1: { // ✅ Add (含输入验证)
+                cout << "Enter Name: ";
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                getline(cin, pname);
+
+                row = readRow_1to30();
+                seatCol = readCol_AtoF();
+                fclass = readClass_FBE();
+
+                sys->addPassenger("", pname, row, seatCol, fclass);
                 break;
+            }
+
             case 2: // Remove
-                cout << "Enter Passenger ID to remove: "; cin >> id;
+                cout << "Enter Passenger ID to remove: ";
+                cin >> id;
                 if (sys->removePassenger(id)) cout << ">> Removed successfully.\n";
                 else cout << ">> Passenger not found.\n";
                 break;
+
             case 3: // Search
-                cout << "Enter Passenger ID to search: "; cin >> id;
+                cout << "Enter Passenger ID to search: ";
+                cin >> id;
                 {
                     Passenger* p = sys->searchPassenger(id);
                     if (p) cout << ">> Found: " << p->name << " at " << p->seatRow << p->seatCol << endl;
                     else cout << ">> Not found.\n";
                 }
                 break;
-            case 4: // Display Map (Fixed: 不会再弹多余的名单)
+
+            case 4: // Display Map
                 sys->displaySeatingMap();
                 break;
-            case 5: // Sort (Fixed: 不会再弹多余的名单)
+
+            case 5: // Sort / Manifest
                 sys->sortAlphabetically();
                 break;
-            case 6: // Waitlist
-                cout << "Enter ID: "; cin >> id;
-                cout << "Enter Name: "; cin.ignore(); getline(cin, pname);
-                cout << "Enter Class: "; cin >> fclass;
+
+            case 6: { // Waitlist（这里也修掉 cin.ignore() 只忽略1个字的坑）
+                cout << "Enter ID: ";
+                cin >> id;
+
+                cout << "Enter Name: ";
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                getline(cin, pname);
+
+                fclass = readClass_FBE();
                 sys->addToWaitlist(id, pname, fclass);
                 break;
+            }
+
             case 0:
                 cout << "Returning..." << endl;
                 break;
+
             default:
                 cout << "Invalid option!" << endl;
         }
@@ -137,18 +221,17 @@ void runSystem(FlightSystem* sys, string name) {
 }
 
 int main() {
-    // 创建两个系统的实例
-    // 注意：这两个类必须在 ArraySystem.cpp 和 LinkedListSystem.cpp 里定义好
     FlightSystem* arraySys = new ArraySystem();
     FlightSystem* listSys = new LinkedListSystem();
 
+    cout << "arraySys=" << arraySys << "  listSys=" << listSys << endl;  // ✅ 加在这里
+
     string filename = "flight_passenger_data.csv.csv";
 
-    cout << "--- Initializing Data ---" << endl;
-    cout << "Loading into Array System..." << endl;
+    cout << ">> Loading Array System from CSV..." << endl;
     loadData(arraySys, filename);
-    
-    cout << "Loading into Linked List System..." << endl;
+
+    cout << ">> Loading into Linked List System..." << endl;
     loadData(listSys, filename);
 
     int mainChoice;
@@ -162,20 +245,19 @@ int main() {
 
         if (mainChoice == 1) {
             runSystem(arraySys, "ARRAY BASED");
-        } 
+        }
         else if (mainChoice == 2) {
             runSystem(listSys, "LINKED LIST BASED");
-        } 
+        }
         else if (mainChoice == 3) {
             cout << "Exiting..." << endl;
             break;
-        } 
+        }
         else {
             cout << "Invalid choice!" << endl;
         }
     }
 
-    // 清理内存
     delete arraySys;
     delete listSys;
     return 0;
