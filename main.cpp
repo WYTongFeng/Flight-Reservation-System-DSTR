@@ -20,7 +20,11 @@ using namespace std;
 
 // Function: Convert string to lowercase
 string toLowerStr(string s) {
-    transform(s.begin(), s.end(), s.begin(), [](unsigned char c){ return (char)tolower(c); });
+    for (int i = 0; i < s.length(); i++) {
+        if (s[i] >= 'A' && s[i] <= 'Z') {
+            s[i] = s[i] + 32; // Manual char conversion
+        }
+    }
     return s;
 }
 
