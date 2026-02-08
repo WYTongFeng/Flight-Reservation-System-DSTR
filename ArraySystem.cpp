@@ -350,33 +350,47 @@ public:
         }
     }
 
-    // ==========================================
-    // FUNCTION 5: Display Manifest
+// ==========================================
+    // FUNCTION 5: Display Manifest (Fixed to show Waitlist)
     // ==========================================
     void displayManifest() override {
+        // 1. Display Main Passenger List (Array)
         if (currentCount == 0) {
-            cout << ">> [Manifest] No passengers found." << endl;
-            return;
-        }
+            cout << ">> [Manifest] Main list is empty." << endl;
+        } else {
+            cout << "\n==============================================================" << endl;
+            cout << "             PASSENGER MANIFEST (ARRAY)" << endl;
+            cout << "==============================================================" << endl;
+            cout << left << setw(10) << "ID" 
+                 << left << setw(20) << "Name" 
+                 << left << setw(10) << "Seat" 
+                 << left << setw(15) << "Class" << endl;
+            cout << "--------------------------------------------------------------" << endl;
 
-        cout << "\n==============================================================" << endl;
-        cout << "             PASSENGER MANIFEST (" << currentCount << " Passengers)" << endl;
-        cout << "==============================================================" << endl;
-        cout << left << setw(10) << "ID" 
-             << left << setw(20) << "Name" 
-             << left << setw(10) << "Seat" 
-             << left << setw(15) << "Class" << endl;
-        cout << "--------------------------------------------------------------" << endl;
-
-        for (int i = 0; i < currentCount; i++) {
-            if (passengerList[i]) {
-                string fullSeat = to_string(passengerList[i]->seatRow) + passengerList[i]->seatCol;
-                cout << left << setw(10) << passengerList[i]->passengerID 
-                     << left << setw(20) << passengerList[i]->name 
-                     << left << setw(10) << fullSeat
-                     << left << setw(15) << passengerList[i]->flightClass << endl;
+            for (int i = 0; i < currentCount; i++) {
+                if (passengerList[i]) {
+                    string fullSeat = to_string(passengerList[i]->seatRow) + passengerList[i]->seatCol;
+                    cout << left << setw(10) << passengerList[i]->passengerID 
+                         << left << setw(20) << passengerList[i]->name 
+                         << left << setw(10) << fullSeat
+                         << left << setw(15) << passengerList[i]->flightClass << endl;
+                }
             }
         }
+
+        // 2. Display Waitlist (Singly Linked List) - THIS WAS MISSING
+        cout << "\n------------------ WAITLIST (Singly Linked List) ------------------" << endl;
+        if (waitlistHead == nullptr) {
+            cout << "(Empty)" << endl;
+        } else {
+            WaitlistNode* temp = waitlistHead;
+            int count = 1;
+            while (temp != nullptr) {
+                cout << count++ << ". " << temp->name << " (" << temp->id << ") - " << temp->flightClass << endl;
+                temp = temp->next;
+            }
+        }
+        
         cout << "==============================================================" << endl;
         cout << "Press Any Key + Enter to continue...";
         string dummy; cin >> dummy;
