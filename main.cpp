@@ -3,8 +3,6 @@
 #include <limits> 
 #include <fstream>
 #include <sstream>
-#include <vector>
-#include <algorithm> 
 #include <cctype>   
 
 #include "FlightCommon.hpp"
