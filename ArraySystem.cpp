@@ -313,10 +313,6 @@ public:
         displayManifest();
     }
 
-    void addToWaitlist(string id, string name, string fclass) override {
-        cout << "[ArraySystem] This feature is primarily for the Linked List implementation." << endl;
-    }
-
     // --- NEW: Waitlist Implementation ---
     void addToWaitlist(string id, string name, string fclass) override {
         WaitlistNode* newNode = new WaitlistNode;
