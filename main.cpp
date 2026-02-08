@@ -168,7 +168,7 @@ void runSystem(FlightSystem* sys, string name) {
                     cout << ">> Seat/ID invalid or taken. Add to Waitlist? (y/n): ";
                     cin >> choice;
                     if (choice == 'y' || choice == 'Y') {
-                        sys->addToWaitlist(id, pname, fclass);
+                        sys->addToWaitlist(id, pname, row, seatCol, fclass);
                     }
                 }
                 break;

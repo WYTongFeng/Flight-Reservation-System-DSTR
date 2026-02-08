@@ -119,6 +119,18 @@ public:
     // FUNCTION 1: Reservation (Insertion) - MODIFIED
     // ==========================================
     bool addPassenger(string id, string name, int row, string col, string fclass) override {
+    
+    // --- NEW VALIDATION ---
+    if (!validateSeatClass(row, fclass)) {
+        cout << ">> [Error] Class Mismatch! " << fclass << " passengers cannot sit in Row " << row << "." << endl;
+        
+        // Optional: Suggest the correct rows
+        if (fclass == "First") cout << ">> [Hint] First Class is Rows 1-3." << endl;
+        else if (fclass == "Business") cout << ">> [Hint] Business Class is Rows 4-10." << endl;
+        else cout << ">> [Hint] Economy Class is Rows 11+." << endl;
+
+        return false;
+        }
         
         Passenger* temp = head;
         
@@ -133,7 +145,7 @@ public:
                      << ". Adding " << name << " to Waitlist..." << endl;
                 
                 // >>> THIS IS THE MISSING LINE <<<
-                addToWaitlist(id, name, fclass); 
+                addToWaitlist(id, name, row, col, fclass); 
                 
                 return false; // Return false to indicate they didn't get a seat (but they ARE saved now)
             }
@@ -415,22 +427,23 @@ public:
     // ==========================================
     // WAITLIST IMPLEMENTATION (Singly Linked List)
     // ==========================================
-    void addToWaitlist(string id, string name, string fclass) override {
+    void addToWaitlist(string id, string name, int row, string col, string fclass) override {
         WaitlistNode* newNode = new WaitlistNode;
         newNode->id = id;
         newNode->name = name;
+        newNode->row = row;
+        newNode->col = col;
         newNode->flightClass = fclass;
         newNode->next = nullptr;
 
-        // Add to Tail (Singly Linked List Logic)
         if (waitlistHead == nullptr) {
             waitlistHead = newNode;
             waitlistTail = newNode;
         } else {
-            waitlistTail->next = newNode; // Point old tail to new node
-            waitlistTail = newNode;       // Update tail
+            waitlistTail->next = newNode;
+            waitlistTail = newNode;
         }
-        cout << ">> [Waitlist] " << name << " added to priority queue." << endl;
+        cout << ">> [Waitlist] " << name << " added for seat " << row << col << "." << endl;
     }
 
     // ==========================================

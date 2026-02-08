@@ -177,8 +177,21 @@ public:
     // ==========================================
     // FUNCTION 1: Add Passenger (Reservation)
     // ==========================================
-    bool addPassenger(string id, string name, int row, string col, string fclass) override {
-        // 1. Expand Array if Row exceeds current limit
+bool addPassenger(string id, string name, int row, string col, string fclass) override {
+    
+    // --- NEW VALIDATION ---
+    if (!validateSeatClass(row, fclass)) {
+        cout << ">> [Error] Class Mismatch! " << fclass << " passengers cannot sit in Row " << row << "." << endl;
+        
+        // Optional: Suggest the correct rows
+        if (fclass == "First") cout << ">> [Hint] First Class is Rows 1-3." << endl;
+        else if (fclass == "Business") cout << ">> [Hint] Business Class is Rows 4-10." << endl;
+        else cout << ">> [Hint] Economy Class is Rows 11+." << endl;
+
+        return false;
+    }
+    
+    // 1. Expand Array if Row exceeds current limit
         
     // Instead, just double check validity (though main.cpp handles this)
         if (row > maxRows) {
@@ -196,8 +209,8 @@ public:
 
         // SEAT COLLISION -> WAITLIST
         if (seatMap[rIndex][cIndex] != "EMPTY") {
-            cout << ">> [System] Seat " << row << col << " is taken. Adding to Waitlist..." << endl;
-            addToWaitlist(id, name, fclass); // AUTOMATICALLY GO TO WAITLIST
+            cout << ">> [System] Seat " << row << col << " is occupied. Adding to Waitlist..." << endl;
+            addToWaitlist(id, name, row, col, fclass); // AUTOMATICALLY GO TO WAITLIST
             return false; 
         }
 
@@ -229,45 +242,71 @@ public:
     }
 
     // ==========================================
-    // FUNCTION 2: Remove Passenger
-    // ==========================================
-    bool removePassenger(string id) override {
-        int index = -1;
-        
-        // 1. Linear Search to find passenger Index (O(N))
-        for (int i = 0; i < currentCount; i++) {
-            if (passengerList[i] != nullptr && passengerList[i]->passengerID == id) {
-                index = i;
-                break;
-            }
+// FUNCTION: Remove Passenger (ARRAY VERSION)
+// ==========================================
+bool removePassenger(string id) override {
+    int targetIndex = -1;
+    
+    // 1. Find Passenger in Array (Linear Search)
+    for (int i = 0; i < currentCount; i++) {
+        if (passengerList[i] != nullptr && passengerList[i]->passengerID == id) {
+            targetIndex = i;
+            break;
         }
-
-        if (index == -1) {
-            return false; // Not found
-        }
-
-        // 2. Clear from Seat Map (O(1))
-        Passenger* p = passengerList[index];
-        int rIndex = p->seatRow - 1;
-        int cIndex = FlightGlobal::getColIndex(p->seatCol);
-        
-        if (rIndex >= 0 && rIndex < maxRows && cIndex != -1) {
-            seatMap[rIndex][cIndex] = "EMPTY"; 
-        }
-
-        // 3. Delete Object from Memory
-        delete passengerList[index]; 
-
-        // 4. Shift Array Elements Left (O(N))
-        // This is necessary to close the "gap" in the array.
-        for (int i = index; i < currentCount - 1; i++) {
-            passengerList[i] = passengerList[i + 1]; 
-        }
-        passengerList[currentCount - 1] = nullptr; 
-        currentCount--;
-
-        return true;
     }
+
+    // If not found
+    if (targetIndex == -1) return false;
+
+    // 2. Capture Data before Deletion (For Auto-Fill)
+    Passenger* p = passengerList[targetIndex];
+    int freedRow = p->seatRow;
+    string freedCol = p->seatCol;
+    string freedClass = p->flightClass;
+
+    // 3. Update Seat Map (Clear the seat)
+    int rIndex = freedRow - 1;
+    int cIndex = FlightGlobal::getColIndex(freedCol);
+    if (rIndex >= 0 && cIndex != -1) {
+        seatMap[rIndex][cIndex] = "EMPTY";
+    }
+
+    // 4. Remove from Array (Shift elements left to fill gap)
+    delete passengerList[targetIndex]; // Free memory
+    for (int i = targetIndex; i < currentCount - 1; i++) {
+        passengerList[i] = passengerList[i + 1];
+    }
+    passengerList[currentCount - 1] = nullptr; // Clear last slot
+    currentCount--;
+
+    cout << ">> [Success] Passenger " << id << " removed." << endl;
+
+    // ====================================================
+    // 5. CHECK WAITLIST TO FILL THE BLANK (Fixed Version)
+    // ====================================================
+    WaitlistNode* wPrev = nullptr;
+    WaitlistNode* wCurr = waitlistHead;
+
+    if (wCurr != nullptr) {
+        // Since we cannot store wantedRow/Col in the WaitlistNode without changing the header,
+        // we take the first person in line to fill the newly freed seat.
+        
+        cout << ">> [Auto-Fill] Seat " << freedRow << freedCol << " freed. Moving " << wCurr->name << " from Waitlist." << endl;
+        
+        // Use the row and column that were just freed
+        addPassenger(wCurr->id, wCurr->name, freedRow, freedCol, wCurr->flightClass);
+
+        // Remove the first person from Waitlist (Standard Singly Linked List Deletion)
+        WaitlistNode* toDelete = wCurr;
+        waitlistHead = wCurr->next; 
+        if (waitlistHead == nullptr) waitlistTail = nullptr; // Update tail if list became empty
+
+        delete toDelete;
+        return true; 
+    }
+
+    return true;
+}
 
 // ==========================================
     // FUNCTION 3: Search Passenger (Updated for Waitlist)
@@ -450,22 +489,23 @@ public:
     // WAITLIST (Singly Linked List Implementation)
     // Requirement: Must demonstrate Singly Linked List
     // ==========================================
-    void addToWaitlist(string id, string name, string fclass) override {
-        WaitlistNode* newNode = new WaitlistNode;
-        newNode->id = id;
-        newNode->name = name;
-        newNode->flightClass = fclass;
-        newNode->next = nullptr;
+    void addToWaitlist(string id, string name, int row, string col, string fclass) override {
+    WaitlistNode* newNode = new WaitlistNode;
+    newNode->id = id;
+    newNode->name = name;
+    newNode->row = row;    // Store the row
+    newNode->col = col;    // Store the col
+    newNode->flightClass = fclass;
+    newNode->next = nullptr;
 
-        // Add to Tail of Singly Linked List
-        if (waitlistHead == nullptr) {
-            waitlistHead = newNode;
-            waitlistTail = newNode;
-        } else {
-            waitlistTail->next = newNode;
-            waitlistTail = newNode;
-        }
-        cout << ">> [Waitlist] " << name << " added to priority queue (Singly Linked List)." << endl;
+    if (waitlistHead == nullptr) {
+        waitlistHead = newNode;
+        waitlistTail = newNode;
+    } else {
+        waitlistTail->next = newNode;
+        waitlistTail = newNode;
+    }
+    cout << ">> [Waitlist] " << name << " added for seat " << row << col << "." << endl;
     }
 
     // ==========================================

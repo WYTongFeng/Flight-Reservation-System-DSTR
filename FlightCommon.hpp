@@ -35,9 +35,11 @@ struct Passenger {
 struct WaitlistNode {
     string id;
     string name;
+    int row;      // Remember the row they wanted
+    string col;   // Remember the column they wanted
     string flightClass;
-    WaitlistNode* next; // Singly Linked List only has 'next'
-};
+    WaitlistNode* next;
+};;
 
 // ==========================================
 // 2. Global Configuration & Utilities (FlightGlobal)
@@ -118,11 +120,28 @@ public:
     // [Requirement] Singly Linked List (Waitlist)
     // Specifically to meet the lecturer's "Use Singly and Doubly" requirement
     // When the flight is full, call this function to add to the Singly Linked List
-    virtual void addToWaitlist(string id, string name, string fclass) = 0;
+    virtual void addToWaitlist(string id, string name, int row, string col, string fclass) = 0;
 
     // [Safety] Virtual Destructor
     // Ensure memory is correctly cleaned up when program closes (Avoid Memory Leak)
     virtual ~FlightSystem() {}
 };
+
+// Check if the seat row matches the passenger's ticket class
+bool validateSeatClass(int row, string fclass) {
+    // 1. First Class Zone (Rows 1-3)
+    if (row >= 1 && row <= 3) {
+        if (fclass != "First") return false;
+    }
+    // 2. Business Class Zone (Rows 4-10)
+    else if (row >= 4 && row <= 10) {
+        if (fclass != "Business") return false;
+    }
+    // 3. Economy Class Zone (Rows 11+)
+    else if (row >= 11) {
+        if (fclass != "Economy") return false;
+    }
+    return true;
+}
 
 #endif
