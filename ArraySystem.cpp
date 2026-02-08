@@ -57,6 +57,46 @@ private:
         passengerCapacity = newCap;
     }
 
+    // --- MERGE SORT HELPERS (Private) ---
+    void merge(Passenger** arr, int left, int mid, int right) {
+        int n1 = mid - left + 1;
+        int n2 = right - mid;
+
+        // Create temp arrays
+        Passenger** L = new Passenger*[n1];
+        Passenger** R = new Passenger*[n2];
+
+        for (int i = 0; i < n1; i++) L[i] = arr[left + i];
+        for (int j = 0; j < n2; j++) R[j] = arr[mid + 1 + j];
+
+        int i = 0, j = 0, k = left;
+        while (i < n1 && j < n2) {
+            // COMPARE IDs
+            if (L[i]->passengerID <= R[j]->passengerID) {
+                arr[k] = L[i];
+                i++;
+            } else {
+                arr[k] = R[j];
+                j++;
+            }
+            k++;
+        }
+
+        while (i < n1) arr[k++] = L[i++];
+        while (j < n2) arr[k++] = R[j++];
+
+        delete[] L;
+        delete[] R;
+    }
+
+    void mergeSortRecursive(Passenger** arr, int left, int right) {
+        if (left >= right) return;
+        int mid = left + (right - left) / 2;
+        mergeSortRecursive(arr, left, mid);
+        mergeSortRecursive(arr, mid + 1, right);
+        merge(arr, left, mid, right);
+    }
+
 public:
     ArraySystem() {
         currentCount = 0;
@@ -330,5 +370,19 @@ public:
             waitlistTail = newNode;
         }
         cout << ">> [Waitlist] " << name << " added to priority queue (Singly Linked List)." << endl;
+    }
+
+    // [Function 7] Merge Sort by ID
+    void sortByID() override {
+        if (currentCount < 2) {
+            cout << ">> Not enough passengers to sort." << endl;
+            return;
+        }
+        cout << ">> [Array] Sorting by ID using MERGE SORT..." << endl;
+        
+        mergeSortRecursive(passengerList, 0, currentCount - 1);
+        
+        cout << ">> Sort Complete (Merge Sort)." << endl;
+        displayManifest();
     }
 };

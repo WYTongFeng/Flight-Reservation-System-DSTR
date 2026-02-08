@@ -15,6 +15,48 @@ private:
     WaitlistNode* waitlistHead;
     WaitlistNode* waitlistTail;
 
+    Passenger* split(Passenger* source) {
+        Passenger* fast = source;
+        Passenger* slow = source;
+        while (fast->next != nullptr && fast->next->next != nullptr) {
+            fast = fast->next->next;
+            slow = slow->next;
+        }
+        Passenger* temp = slow->next;
+        slow->next = nullptr;
+        if (temp) temp->prev = nullptr; // Break backward link
+        return temp;
+    }
+
+    Passenger* merge(Passenger* first, Passenger* second) {
+        if (!first) return second;
+        if (!second) return first;
+
+        Passenger* result = nullptr;
+
+        // COMPARE IDs
+        if (first->passengerID <= second->passengerID) {
+            result = first;
+            result->next = merge(first->next, second);
+            if (result->next) result->next->prev = result; // Maintain Prev pointer
+            result->prev = nullptr;
+        } else {
+            result = second;
+            result->next = merge(first, second->next);
+            if (result->next) result->next->prev = result;
+            result->prev = nullptr;
+        }
+        return result;
+    }
+
+    Passenger* mergeSortRec(Passenger* node) {
+        if (!node || !node->next) return node;
+        Passenger* second = split(node);
+        node = mergeSortRec(node);
+        second = mergeSortRec(second);
+        return merge(node, second);
+    }
+
 public:
     LinkedListSystem() {
         head = nullptr;
@@ -307,5 +349,26 @@ void addPassenger(string id, string name, int row, string col, string fclass) ov
             waitlistTail = newNode;       // Update tail
         }
         cout << ">> [Waitlist] " << name << " added to priority queue." << endl;
+    }
+
+    // [Function 7] Merge Sort by ID
+    void sortByID() override {
+        if (head == nullptr || head->next == nullptr) {
+            cout << ">> Not enough passengers to sort." << endl;
+            return;
+        }
+        cout << ">> [Linked List] Sorting by ID using MERGE SORT..." << endl;
+
+        head = mergeSortRec(head);
+
+        // CRITICAL: Fix the Tail Pointer after sorting!
+        Passenger* temp = head;
+        while (temp->next != nullptr) {
+            temp = temp->next;
+        }
+        tail = temp;
+
+        cout << ">> Sort Complete (Merge Sort)." << endl;
+        displayManifest();
     }
 };

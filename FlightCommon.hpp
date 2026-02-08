@@ -111,7 +111,8 @@ public:
 
     // [Requirement] Sorting Algorithm
     // ⚠️ 规则: 必须都使用 Bubble Sort (冒泡排序) 按名字 A-F 排序
-    virtual void sortAlphabetically() = 0;
+    virtual void sortAlphabetically() = 0; // Existing Bubble Sort
+    virtual void sortByID() = 0;           // << ADD THIS (Merge Sort)
 
     // [Requirement] Singly Linked List (候补名单)
     // 专门为了满足老师 "Use Singly and Doubly" 的要求

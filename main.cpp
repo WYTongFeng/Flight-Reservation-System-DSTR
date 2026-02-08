@@ -101,6 +101,7 @@ void showSubMenu(string systemName) {
     cout << "3. Search Passenger" << endl;
     cout << "4. Display Seat Map" << endl;
     cout << "5. Display Manifest (Sorted)" << endl;
+    cout << "6. Display Manifest (Merge Sort by ID)" << endl; // << NEW
     cout << "0. Back to Main Menu" << endl;
     cout << "Select Operation: ";
 }
@@ -155,6 +156,9 @@ void runSystem(FlightSystem* sys, string name) {
                 break;
             case 5:
                 sys->sortAlphabetically();
+                break;
+            case 6:
+                sys->sortByID();
                 break;
             case 0:
                 break;
