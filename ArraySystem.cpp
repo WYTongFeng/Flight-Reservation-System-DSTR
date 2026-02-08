@@ -128,7 +128,68 @@ private:
 
 public:
 
-    void processWaitlist(); 
+    void processWaitlist() override {
+        cout << ">> [System] Processing Waitlist for empty seats..." << endl;
+        
+        if (waitlistHead == nullptr) {
+            cout << ">> [System] Waitlist is empty. No action needed." << endl;
+            return;
+        }
+
+        WaitlistNode* prev = nullptr;
+        WaitlistNode* curr = waitlistHead;
+
+        while (curr != nullptr) {
+            bool assigned = false;
+            int startRow, endRow;
+
+            // 1. Determine Class Zone
+            if (curr->flightClass == "First") { startRow = 1; endRow = 3; }
+            else if (curr->flightClass == "Business") { startRow = 4; endRow = 10; }
+            else { startRow = 11; endRow = maxRows; } // Economy
+
+            // 2. Find an Empty Seat in that Zone
+            for (int r = startRow; r <= endRow; r++) {
+                for (int c = 0; c < FlightGlobal::COLS; c++) {
+                    
+                    // Check if seat is EMPTY in the 2D Map
+                    if (seatMap[r-1][c] == "EMPTY") {
+                        
+                        string foundCol = FlightGlobal::getColName(c);
+                        cout << ">> [Auto-Assign] Moved " << curr->name << " from Waitlist to Seat " << r << foundCol << "." << endl;
+
+                        // Add to Main System
+                        addPassenger(curr->id, curr->name, r, foundCol, curr->flightClass);
+                        assigned = true;
+                        goto FOUND_SEAT; // Break out of double loop
+                    }
+                }
+            }
+
+            FOUND_SEAT:
+            
+            // 3. Remove from Waitlist if assigned
+            if (assigned) {
+                WaitlistNode* toDelete = curr;
+                
+                if (prev == nullptr) {
+                    waitlistHead = curr->next;
+                    if (waitlistHead == nullptr) waitlistTail = nullptr;
+                    curr = waitlistHead; // Move to new head
+                } else {
+                    prev->next = curr->next;
+                    if (prev->next == nullptr) waitlistTail = prev;
+                    curr = curr->next; // Move to next
+                }
+                delete toDelete;
+            } else {
+                // No seat found, move to next person
+                prev = curr;
+                curr = curr->next;
+            }
+        }
+        cout << ">> [System] Waitlist processing complete." << endl;
+    }
 
     // ==========================================
     // CONSTRUCTOR & DESTRUCTOR
@@ -245,73 +306,79 @@ bool addPassenger(string id, string name, int row, string col, string fclass) ov
     }
 
     // ==========================================
-// FUNCTION: Remove Passenger (ARRAY VERSION)
-// ==========================================
-bool removePassenger(string id) override {
-    int targetIndex = -1;
-    
-    // 1. Find Passenger in Array (Linear Search)
-    for (int i = 0; i < currentCount; i++) {
-        if (passengerList[i] != nullptr && passengerList[i]->passengerID == id) {
-            targetIndex = i;
-            break;
+    // FUNCTION: Remove Passenger (ARRAY VERSION)
+    // ==========================================
+    bool removePassenger(string id) override {
+        int targetIndex = -1;
+        
+        // 1. Find Passenger
+        for (int i = 0; i < currentCount; i++) {
+            if (passengerList[i] != nullptr && passengerList[i]->passengerID == id) {
+                targetIndex = i;
+                break;
+            }
         }
+
+        if (targetIndex == -1) return false;
+
+        // 2. Capture Data (To know which seat opened up)
+        Passenger* p = passengerList[targetIndex];
+        int freedRow = p->seatRow;
+        string freedCol = p->seatCol;
+
+        // 3. Clear from Seat Map
+        int rIndex = freedRow - 1;
+        int cIndex = FlightGlobal::getColIndex(freedCol);
+        if (rIndex >= 0 && cIndex != -1) {
+            seatMap[rIndex][cIndex] = "EMPTY";
+        }
+
+        // 4. Remove from Array (Shift elements)
+        delete passengerList[targetIndex]; 
+        for (int i = targetIndex; i < currentCount - 1; i++) {
+            passengerList[i] = passengerList[i + 1];
+        }
+        passengerList[currentCount - 1] = nullptr; 
+        currentCount--;
+
+        cout << ">> [System] Passenger " << id << " removed. Seat " << freedRow << freedCol << " is now free." << endl;
+
+        // ==========================================
+        // AUTO-FILL FROM WAITLIST (Corrected Names)
+        // ==========================================
+        WaitlistNode* prev = nullptr;
+        WaitlistNode* curr = waitlistHead;
+
+        while (curr != nullptr) {
+            // ERROR FIX: Use 'row' and 'col' to match your FlightCommon.hpp
+            if (curr->row == freedRow && curr->col == freedCol) {
+                
+                cout << ">> [Waitlist] Found match! Promoting " << curr->name << " to Seat " << freedRow << freedCol << "." << endl;
+
+                // Add to main flight (using the row/col we just freed)
+                addPassenger(curr->id, curr->name, freedRow, freedCol, curr->flightClass);
+
+                // Remove from Waitlist
+                if (prev == nullptr) {
+                    waitlistHead = curr->next;
+                    if (waitlistHead == nullptr) waitlistTail = nullptr;
+                } else {
+                    prev->next = curr->next;
+                    if (prev->next == nullptr) waitlistTail = prev;
+                }
+                
+                delete curr; // Free memory
+                break; // Stop after promoting one person
+            }
+            
+            prev = curr;
+            curr = curr->next;
+        }
+
+        return true;
     }
 
-    // If not found
-    if (targetIndex == -1) return false;
-
-    // 2. Capture Data before Deletion (For Auto-Fill)
-    Passenger* p = passengerList[targetIndex];
-    int freedRow = p->seatRow;
-    string freedCol = p->seatCol;
-    string freedClass = p->flightClass;
-
-    // 3. Update Seat Map (Clear the seat)
-    int rIndex = freedRow - 1;
-    int cIndex = FlightGlobal::getColIndex(freedCol);
-    if (rIndex >= 0 && cIndex != -1) {
-        seatMap[rIndex][cIndex] = "EMPTY";
-    }
-
-    // 4. Remove from Array (Shift elements left to fill gap)
-    delete passengerList[targetIndex]; // Free memory
-    for (int i = targetIndex; i < currentCount - 1; i++) {
-        passengerList[i] = passengerList[i + 1];
-    }
-    passengerList[currentCount - 1] = nullptr; // Clear last slot
-    currentCount--;
-
-    cout << ">> [Success] Passenger " << id << " removed." << endl;
-
-    // ====================================================
-    // 5. CHECK WAITLIST TO FILL THE BLANK (Fixed Version)
-    // ====================================================
-    WaitlistNode* wPrev = nullptr;
-    WaitlistNode* wCurr = waitlistHead;
-
-    if (wCurr != nullptr) {
-        // Since we cannot store wantedRow/Col in the WaitlistNode without changing the header,
-        // we take the first person in line to fill the newly freed seat.
-        
-        cout << ">> [Auto-Fill] Seat " << freedRow << freedCol << " freed. Moving " << wCurr->name << " from Waitlist." << endl;
-        
-        // Use the row and column that were just freed
-        addPassenger(wCurr->id, wCurr->name, freedRow, freedCol, wCurr->flightClass);
-
-        // Remove the first person from Waitlist (Standard Singly Linked List Deletion)
-        WaitlistNode* toDelete = wCurr;
-        waitlistHead = wCurr->next; 
-        if (waitlistHead == nullptr) waitlistTail = nullptr; // Update tail if list became empty
-
-        delete toDelete;
-        return true; 
-    }
-
-    return true;
-}
-
-// ==========================================
+    // ==========================================
     // FUNCTION 3: Search Passenger (Updated for Waitlist)
     // ==========================================
     Passenger* searchPassenger(const string& id) override {
@@ -348,75 +415,79 @@ bool removePassenger(string id) override {
     // ==========================================
     // FUNCTION 4: Display Seat Map
     // ==========================================
-    void displaySeatingMap() override {
-        // Optimization: Calculate last used row to avoid printing 100+ empty rows
-        int lastActiveRow = 20; // Minimum default
-        for(int i = maxRows - 1; i >= 0; i--) {
-            bool rowEmpty = true;
-            for(int j = 0; j < FlightGlobal::COLS; j++) {
-                if(seatMap[i][j] != "EMPTY") { rowEmpty = false; break; }
-            }
-            if(!rowEmpty) { 
-                lastActiveRow = i + 1; 
-                break; 
-            }
+void displaySeatingMap() override {
+    // 1. Calculate Last Active Row
+    int maxRowDisplayed = 60; // Default to showing 60 rows
+    /* Optional: Loop to find actual last row if you want to optimize
+    for(int i = maxRows; i >= 1; i--) { 
+        // check if row is empty... 
+    } */
+
+    int totalPages = (maxRowDisplayed + FlightGlobal::ROWS_PER_PAGE - 1) / FlightGlobal::ROWS_PER_PAGE;
+    int currentPage = 1;
+
+    while (true) {
+        cout << string(50, '\n'); 
+        cout << "==========================================================================================" << endl;
+        cout << "                          FLIGHT SEATING MAP (ARRAY SYSTEM)                               " << endl;
+        cout << "==========================================================================================" << endl;
+        
+        // --- DYNAMIC HEADER ---
+        cout << "      "; 
+        for (int c = 0; c < FlightGlobal::COLS; c++) {
+            cout << " [" << FlightGlobal::getColName(c) << "]            "; 
+            if (c == 2) cout << "    "; 
         }
+        cout << endl;
+        cout << "------------------------------------------------------------------------------------------" << endl;
 
-        // Pagination Logic
-        int totalPages = (lastActiveRow + FlightGlobal::ROWS_PER_PAGE - 1) / FlightGlobal::ROWS_PER_PAGE;
-        if (totalPages < 1) totalPages = 1;
-        int currentPage = 1;
+        int startRow = (currentPage - 1) * FlightGlobal::ROWS_PER_PAGE;
+        int endRow = startRow + FlightGlobal::ROWS_PER_PAGE;
+        if (endRow > maxRowDisplayed) endRow = maxRowDisplayed;
 
-        while (true) {
-            // Clear Screen
-            cout << string(50, '\n'); 
-
-            cout << "==========================================================================" << endl;
-            cout << "                       FLIGHT SEATING MAP (ARRAY)                         " << endl;
-            cout << "==========================================================================" << endl;
-            cout << "      " 
-                 << left << setw(FlightGlobal::COL_WIDTH) << "[A]" 
-                 << left << setw(FlightGlobal::COL_WIDTH) << "[B]" 
-                 << left << setw(FlightGlobal::COL_WIDTH) << "[C]" 
-                 << "    " 
-                 << left << setw(FlightGlobal::COL_WIDTH) << "[D]" 
-                 << left << setw(FlightGlobal::COL_WIDTH) << "[E]" 
-                 << left << setw(FlightGlobal::COL_WIDTH) << "[F]" << endl;
-            cout << "--------------------------------------------------------------------------" << endl;
-
-            int startRow = (currentPage - 1) * FlightGlobal::ROWS_PER_PAGE;
-            int endRow = startRow + FlightGlobal::ROWS_PER_PAGE; 
-            if (endRow > lastActiveRow) endRow = lastActiveRow;
-
-            // Render Rows
-            for (int i = startRow; i < endRow; i++) {
-                string rowClass = "Eco"; 
-                if (i < 3) rowClass = "Fst";      
-                else if (i < 10) rowClass = "Bus"; 
-                
-                cout << rowClass << setw(2) << setfill('0') << (i + 1) << setfill(' ') << " "; 
-
-                for (int j = 0; j < FlightGlobal::COLS; j++) {
-                    string display = FlightGlobal::formatName(seatMap[i][j]); 
-                    // Truncate name if too long for the grid
-                    if (display.length() > 12) display = display.substr(0, 9) + "..";
-                    
-                    cout << "[" << left << setw(10) << display << "] ";
-                    if (j == 2) cout << "    "; // Aisle gap
-                }
-                cout << endl;
-            }
-            cout << "--------------------------------------------------------------------------" << endl;
-            cout << "PAGE " << currentPage << "/" << totalPages << " | [N]ext  [P]rev  [0] Exit: ";
+        // --- RENDER ROWS ---
+        for (int r = startRow; r < endRow; r++) {
+            int actualRow = r + 1;
             
-            string input;
-            cin >> input;
+            string rowClass = "Eco"; 
+            if (actualRow <= 3) rowClass = "Fst";      
+            else if (actualRow <= 10) rowClass = "Bus";
+            
+            // Print Row Number (Right Aligned)
+            cout << rowClass << right << setw(2) << setfill('0') << actualRow << setfill(' ') << " ";
 
-            if (input == "0") break;
-            if ((input == "n" || input == "N") && currentPage < totalPages) currentPage++;
-            if ((input == "p" || input == "P") && currentPage > 1) currentPage--;
+            // Print Columns
+            for (int c = 0; c < FlightGlobal::COLS; c++) {
+                
+                // [FIX] Declare 'display' EXACTLY ONCE here
+                string display = "EMPTY";
+                
+                // Array Logic: Direct Access
+                if ((r < maxRows) && (seatMap[r][c] != "EMPTY")) {
+                    display = seatMap[r][c];
+                }
+
+                // Formatting
+                if (display == "EMPTY" || display == "") display = "---";
+                if (display.length() > 12) display = display.substr(0, 10) + "..";
+
+                cout << "[" << left << setw(12) << display << "] "; 
+                if (c == 2) cout << "    "; 
+            }
+            cout << endl;
         }
+
+        cout << "------------------------------------------------------------------------------------------" << endl;
+        cout << "PAGE " << currentPage << "/" << totalPages << " | [N]ext  [P]rev  [0] Exit: ";
+        
+        string input;
+        cin >> input;
+
+        if (input == "0") break;
+        if ((input == "n" || input == "N") && currentPage < totalPages) currentPage++;
+        if ((input == "p" || input == "P") && currentPage > 1) currentPage--;
     }
+}
 
 // ==========================================
     // FUNCTION 5: Display Manifest (Fixed to show Waitlist)

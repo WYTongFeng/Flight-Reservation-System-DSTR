@@ -39,7 +39,7 @@ struct WaitlistNode {
     string col;   // Remember the column they wanted
     string flightClass;
     WaitlistNode* next;
-};
+};;
 
 // ==========================================
 // 2. Global Configuration & Utilities (FlightGlobal)
@@ -48,11 +48,11 @@ struct WaitlistNode {
 namespace FlightGlobal {
     
     // --- Constant Configuration (Constants) ---
-    const int COLS = 6;             // Changed back to 6 columns (A-F)
+    const int COLS = 10;             // Changed back to 6 columns (A-F)
     const int COL_WIDTH = 15;       // Width 15, just enough to show the name without breaking the screen layout
     const int ROWS_PER_PAGE = 15;   // Show 15 rows per page
     const int MANIFEST_PER_PAGE = 15;
-    const int DEFAULT_MAX_ROWS = 60; // A normal plane has about 50-60 rows
+    const int DEFAULT_MAX_ROWS = 100; // A normal plane has about 50-60 rows
 
     // --- Helper Functions (Helpers) ---
 
@@ -69,7 +69,7 @@ namespace FlightGlobal {
     inline int getColIndex(string col) {
         if (col.empty()) return -1;
         char c = toupper(col[0]);
-        if (c >= 'A' && c <= ('A' + COLS - 1)) return c - 'A'; 
+        if (c >= 'A' && c <= 'F') return c - 'A'; // Only allow A-F
         return -1;
     }
 
@@ -87,6 +87,9 @@ namespace FlightGlobal {
 class FlightSystem {
 public:
     // --- Core Functions (Each person is responsible for 2) ---
+
+    // Scans the waitlist and moves passengers to ANY available seat in their class.
+    virtual void processWaitlist() = 0;
 
     // [Function 1] Reservation (Insertion)
     // Array: Fill into 2D array
@@ -121,7 +124,6 @@ public:
     // Specifically to meet the lecturer's "Use Singly and Doubly" requirement
     // When the flight is full, call this function to add to the Singly Linked List
     virtual void addToWaitlist(string id, string name, int row, string col, string fclass) = 0;
-    virtual void processWaitlist() = 0;
 
     // [Safety] Virtual Destructor
     // Ensure memory is correctly cleaned up when program closes (Avoid Memory Leak)
