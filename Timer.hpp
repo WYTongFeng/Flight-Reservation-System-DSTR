@@ -2,48 +2,48 @@
 #define TIMER_HPP
 
 #include <iostream>
-#include <chrono> // C++ 标准时间库，用于高精度计时
+#include <chrono> // C++ Standard Time Library, used for high-precision timing
 
 using namespace std;
 using namespace std::chrono;
 
 class Timer {
 private:
-    // 记录开始时间点
+    // Record start time point
     high_resolution_clock::time_point start_time;
-    // 记录结束时间点
+    // Record end time point
     high_resolution_clock::time_point end_time;
 
 public:
-    // 构造函数：创建对象时自动开始计时
+    // Constructor: Automatically start timing when object is created
     Timer() {
         start_time = high_resolution_clock::now();
     }
 
-    // 功能：手动重置/开始计时
+    // Function: Manually reset/start timing
     void start() {
         start_time = high_resolution_clock::now();
     }
 
-    // 功能：停止计时
+    // Function: Stop timing
     void stop() {
         end_time = high_resolution_clock::now();
     }
 
-    // 功能：获取流逝的时间（微秒 Microseconds）- 精度更高，适合测快速操作
+    // Function: Get elapsed time (Microseconds) - Higher precision, suitable for measuring fast operations
     long long getDurationInMicroseconds() {
         auto duration = duration_cast<microseconds>(end_time - start_time);
         return duration.count();
     }
 
-    // 功能：获取流逝的时间（毫秒 Milliseconds）
+    // Function: Get elapsed time (Milliseconds)
     long long getDurationInMilliseconds() {
         auto duration = duration_cast<milliseconds>(end_time - start_time);
         return duration.count();
     }
     
-    // 析构函数
+    // Destructor
     ~Timer() {}
 };
 
-#endif
+#endif // TIMER_HPP
