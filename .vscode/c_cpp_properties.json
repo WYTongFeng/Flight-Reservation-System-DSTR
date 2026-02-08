@@ -11,7 +11,7 @@
                 "_UNICODE"
             ],
             "compilerPath": "C:/src/msys2/ucrt64/bin/g++.exe",
-            "intelliSenseMode": "windows-msvc-x64"
+            "intelliSenseMode": "gcc-x64"
         }
     ],
     "version": 4
