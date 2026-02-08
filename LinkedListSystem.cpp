@@ -116,22 +116,29 @@ public:
     }
 
     // ==========================================
-    // FUNCTION 1: Reservation (Insertion)
+    // FUNCTION 1: Reservation (Insertion) - MODIFIED
     // ==========================================
     bool addPassenger(string id, string name, int row, string col, string fclass) override {
         
         Passenger* temp = head;
         
         // 1. TRAVERSAL CHECK (O(N) Time Complexity)
-        // Contrast with Array: Array checks seat in O(1).
-        // Linked List MUST traverse the whole list to find duplicates or collisions.
         while (temp != nullptr) {
-            // Check Seat Collision
+            // --- COLLISION CHECK ---
             if (temp->seatRow == row && temp->seatCol == col) {
-                cout << ">> [Failed] Seat " << row << col << " is already occupied by " << temp->name << "." << endl;
-                return false; 
+                // OLD CODE: cout << ">> [Failed] Seat " << row << col << " is already occupied..."
+                
+                // NEW CODE: Handle the collision by adding to Waitlist
+                cout << ">> [System] Seat " << row << col << " is taken by " << temp->name 
+                     << ". Adding " << name << " to Waitlist..." << endl;
+                
+                // >>> THIS IS THE MISSING LINE <<<
+                addToWaitlist(id, name, fclass); 
+                
+                return false; // Return false to indicate they didn't get a seat (but they ARE saved now)
             }
-            // Check Duplicate ID
+
+            // --- DUPLICATE ID CHECK ---
             if (temp->passengerID == id) {
                 cout << ">> [Failed] Passenger ID " << id << " already exists." << endl;
                 return false; 
@@ -139,7 +146,7 @@ public:
             temp = temp->next;
         }
 
-        // 2. Create New Node
+        // 2. Create New Node (If no collision, proceed as normal...)
         Passenger* newP = new Passenger;
         newP->passengerID = id;
         newP->name = name;
@@ -149,17 +156,17 @@ public:
         newP->next = nullptr;
         newP->prev = nullptr;
 
-        // 3. Append to Tail (O(1) insertion if Tail pointer exists)
+        // 3. Append to Tail
         if (head == nullptr) {
             head = newP;
             tail = newP;
         } else {
-            tail->next = newP;   // Link old tail to new node
-            newP->prev = tail;   // Link new node back to old tail
-            tail = newP;         // Update tail
+            tail->next = newP;   
+            newP->prev = tail;   
+            tail = newP;         
         }
         currentCount++;
-        cout << ">> [Success] Passenger " << name << " (" << id << ") added to linked list." << endl;
+        // cout << ">> [Success] ... " << endl; // Optional: Comment out to reduce spam during loading
         return true;
     }
 
