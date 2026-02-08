@@ -177,7 +177,7 @@ public:
     // ==========================================
     // FUNCTION 1: Add Passenger (Reservation)
     // ==========================================
-bool addPassenger(string id, string name, int row, string col, string fclass) override {
+    bool addPassenger(string id, string name, int row, string col, string fclass) override {
     
     // --- NEW VALIDATION ---
     if (!validateSeatClass(row, fclass)) {
@@ -244,7 +244,7 @@ bool addPassenger(string id, string name, int row, string col, string fclass) ov
     // ==========================================
 // FUNCTION: Remove Passenger (ARRAY VERSION)
 // ==========================================
-bool removePassenger(string id) override {
+    bool removePassenger(string id) override {
     int targetIndex = -1;
     
     // 1. Find Passenger in Array (Linear Search)

@@ -238,16 +238,12 @@ void runSystem(FlightSystem* sys, string name) {
             case 5: // BUBBLE SORT (Name)
                 {
                     Timer t;
-                    long long memBefore = t.getMemoryUsageKB(); // Capture memory before [cite: 114]
-                    
+
                     t.start();
                     sys->sortAlphabetically();
                     t.stop();
 
-                    long long memAfter = t.getMemoryUsageKB(); // Capture memory after [cite: 114]
-                    
                     cout << ">> [Performance] Time: " << t.getDurationInMicroseconds() << " microseconds" << endl;
-                    cout << ">> [Performance] Memory Delta: " << (memAfter - memBefore) << " KB" << endl;
                     
                     // This output helps you during your video recording and report [cite: 132, 157]
                     t.printComplexity("BubbleSort"); 
