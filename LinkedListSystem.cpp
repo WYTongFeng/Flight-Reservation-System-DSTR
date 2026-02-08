@@ -5,36 +5,55 @@
 
 using namespace std;
 
+// ==========================================
+// CLASS: LinkedListSystem
+// Description: Implements the Flight System using Linked Lists.
+// Key Features:
+// 1. Doubly Linked List for Main Passenger Records (Flexible Deletion).
+// 2. Singly Linked List for Waitlist (Requirement).
+// 3. Merge Sort for efficient sorting of Linked Lists (O(N log N)).
+// ==========================================
 class LinkedListSystem : public FlightSystem {
 private:
-    Passenger* head;
-    Passenger* tail;
-    int currentCount;
+    // --- Main List Variables (Doubly Linked List) ---
+    Passenger* head;        // Pointer to the first passenger
+    Passenger* tail;        // Pointer to the last passenger (for fast insertion)
+    int currentCount;       // Total passengers
 
-    // --- NEW: Waitlist Variables (Singly Linked List) ---
+    // --- Waitlist Variables (Singly Linked List) ---
+    // Stores passengers who are waiting for a seat when the flight is full.
     WaitlistNode* waitlistHead;
     WaitlistNode* waitlistTail;
 
+    // ==========================================
+    // HELPER: Merge Sort Implementation
+    // ==========================================
+    
+    // Function: Split the list into two halves using "Fast & Slow" pointers
     Passenger* split(Passenger* source) {
         Passenger* fast = source;
         Passenger* slow = source;
+        
+        // Fast moves 2 steps, Slow moves 1 step
         while (fast->next != nullptr && fast->next->next != nullptr) {
             fast = fast->next->next;
             slow = slow->next;
         }
+        
         Passenger* temp = slow->next;
-        slow->next = nullptr;
+        slow->next = nullptr; // Cut the list
         if (temp) temp->prev = nullptr; // Break backward link
         return temp;
     }
 
+    // Function: Merge two sorted lists together (Recursive)
     Passenger* merge(Passenger* first, Passenger* second) {
         if (!first) return second;
         if (!second) return first;
 
         Passenger* result = nullptr;
 
-        // COMPARE IDs
+        // Compare IDs
         if (first->passengerID <= second->passengerID) {
             result = first;
             result->next = merge(first->next, second);
@@ -49,15 +68,21 @@ private:
         return result;
     }
 
+    // Function: Recursive Merge Sort Main Function
     Passenger* mergeSortRec(Passenger* node) {
-        if (!node || !node->next) return node;
-        Passenger* second = split(node);
-        node = mergeSortRec(node);
-        second = mergeSortRec(second);
-        return merge(node, second);
+        if (!node || !node->next) return node; // Base case: 0 or 1 element
+        
+        Passenger* second = split(node); // Divide
+        node = mergeSortRec(node);       // Sort Left
+        second = mergeSortRec(second);   // Sort Right
+        
+        return merge(node, second);      // Conquer (Merge)
     }
 
 public:
+    // ==========================================
+    // CONSTRUCTOR & DESTRUCTOR
+    // ==========================================
     LinkedListSystem() {
         head = nullptr;
         tail = nullptr;
@@ -70,8 +95,8 @@ public:
         cout << ">> Linked List System Initialized." << endl;
     }
 
-        ~LinkedListSystem() {
-        // 1. Clean up Main Passenger List
+    ~LinkedListSystem() {
+        // 1. Clean up Main Passenger List (Doubly Linked)
         Passenger* temp = head;
         while (temp != nullptr) {
             Passenger* nextNode = temp->next;
@@ -79,7 +104,7 @@ public:
             temp = nextNode;
         }
 
-        // 2. Clean up Waitlist (YOU MISSED THIS PART)
+        // 2. Clean up Waitlist (Singly Linked)
         WaitlistNode* wTemp = waitlistHead;
         while (wTemp != nullptr) {
             WaitlistNode* wNext = wTemp->next;
@@ -87,58 +112,59 @@ public:
             wTemp = wNext;
         }
         
-        cout << ">> Linked List System Destroyed." << endl;
+        cout << ">> Linked List System Destroyed (Memory Freed)." << endl;
     }
 
     // ==========================================
-    // Function 1: Reservation (Insertion)
+    // FUNCTION 1: Reservation (Insertion)
     // ==========================================
-bool addPassenger(string id, string name, int row, string col, string fclass) override {
-    
-    Passenger* temp = head;
-    
-    // TRAVERSAL CHECK (O(N))
-    // We check BOTH "Seat Collision" and "Duplicate ID" in one pass.
-    while (temp != nullptr) {
-        // Check Seat
-        if (temp->seatRow == row && temp->seatCol == col) {
-            cout << ">> [Failed] Seat " << row << col << " is already occupied by " << temp->name << "." << endl;
-            return false; 
+    bool addPassenger(string id, string name, int row, string col, string fclass) override {
+        
+        Passenger* temp = head;
+        
+        // 1. TRAVERSAL CHECK (O(N) Time Complexity)
+        // Contrast with Array: Array checks seat in O(1).
+        // Linked List MUST traverse the whole list to find duplicates or collisions.
+        while (temp != nullptr) {
+            // Check Seat Collision
+            if (temp->seatRow == row && temp->seatCol == col) {
+                cout << ">> [Failed] Seat " << row << col << " is already occupied by " << temp->name << "." << endl;
+                return false; 
+            }
+            // Check Duplicate ID
+            if (temp->passengerID == id) {
+                cout << ">> [Failed] Passenger ID " << id << " already exists." << endl;
+                return false; 
+            }
+            temp = temp->next;
         }
-        // Check ID
-        if (temp->passengerID == id) {
-            cout << ">> [Failed] Passenger ID " << id << " already exists." << endl;
-            return false; 
+
+        // 2. Create New Node
+        Passenger* newP = new Passenger;
+        newP->passengerID = id;
+        newP->name = name;
+        newP->seatRow = row;
+        newP->seatCol = col;
+        newP->flightClass = fclass;
+        newP->next = nullptr;
+        newP->prev = nullptr;
+
+        // 3. Append to Tail (O(1) insertion if Tail pointer exists)
+        if (head == nullptr) {
+            head = newP;
+            tail = newP;
+        } else {
+            tail->next = newP;   // Link old tail to new node
+            newP->prev = tail;   // Link new node back to old tail
+            tail = newP;         // Update tail
         }
-        temp = temp->next;
+        currentCount++;
+        cout << ">> [Success] Passenger " << name << " (" << id << ") added to linked list." << endl;
+        return true;
     }
-
-    // If we get here, it's safe to add.
-    Passenger* newP = new Passenger;
-    newP->passengerID = id;
-    newP->name = name;
-    newP->seatRow = row;
-    newP->seatCol = col;
-    newP->flightClass = fclass;
-    newP->next = nullptr;
-    newP->prev = nullptr;
-
-    // Append to Tail (O(1) with tail pointer)
-    if (head == nullptr) {
-        head = newP;
-        tail = newP;
-    } else {
-        tail->next = newP;
-        newP->prev = tail;
-        tail = newP;
-    }
-    currentCount++;
-    cout << ">> [Success] Passenger " << name << " (" << id << ") added to linked list." << endl;
-    return true;
-}
 
     // ==========================================
-    // Function 2: Cancellation (Deletion)
+    // FUNCTION 2: Cancellation (Deletion)
     // ==========================================
     bool removePassenger(string id) override {
         if (head == nullptr) return false;
@@ -148,20 +174,20 @@ bool addPassenger(string id, string name, int row, string col, string fclass) ov
         // Traverse to find node
         while (current != nullptr) {
             if (current->passengerID == id) {
-                // FOUND! Now unlink it.
+                // FOUND! Now unlink it (Pointer rewiring)
                 
-                // Case 1: Head Node
+                // Case 1: Removing Head Node
                 if (current == head) {
                     head = current->next;
                     if (head != nullptr) head->prev = nullptr;
                     else tail = nullptr; // List became empty
                 }
-                // Case 2: Tail Node
+                // Case 2: Removing Tail Node
                 else if (current == tail) {
                     tail = current->prev;
                     tail->next = nullptr;
                 }
-                // Case 3: Middle Node
+                // Case 3: Removing Middle Node
                 else {
                     current->prev->next = current->next;
                     current->next->prev = current->prev;
@@ -177,10 +203,11 @@ bool addPassenger(string id, string name, int row, string col, string fclass) ov
     }
 
     // ==========================================
-    // Function 3: Search (Linear Search)
+    // FUNCTION 3: Search (Linear Search)
     // ==========================================
     Passenger* searchPassenger(const string& id) override {
         Passenger* current = head;
+        // Traverse linearly O(N)
         while (current != nullptr) {
             if (current->passengerID == id) {
                 return current;
@@ -191,12 +218,12 @@ bool addPassenger(string id, string name, int row, string col, string fclass) ov
     }
 
     // ==========================================
-    // Function 4: Display Map
+    // FUNCTION 4: Display Map
+    // Description: Renders the visual grid.
+    // Note: Inefficient for Linked Lists (requires O(N) search for every cell).
     // ==========================================
-    // Challenge: Linked Lists don't have rows/cols structure. 
-    // To match the Array System's visual, we must build a temporary "View"
     void displaySeatingMap() override {
-        // 1. Find max row to know how much to print
+        // 1. Find max row to determine map size
         int maxRow = 20; 
         Passenger* temp = head;
         while (temp != nullptr) {
@@ -226,18 +253,16 @@ bool addPassenger(string id, string name, int row, string col, string fclass) ov
             int endRow = startRow + FlightGlobal::ROWS_PER_PAGE;
             if (endRow > maxRow) endRow = maxRow;
 
-            // RENDER LOGIC: For every row, we must search the list (Inefficient, but necessary for LL)
+            // RENDER LOGIC: Nested Loop
             for (int r = startRow; r < endRow; r++) {
                 int actualRow = r + 1;
                 
-                // Determine Class Label
                 string rowClass = "Eco"; 
                 if (r < 3) rowClass = "Fst";      
                 else if (r < 10) rowClass = "Bus";
 
                 cout << rowClass << setw(2) << setfill('0') << actualRow << setfill(' ') << " ";
 
-                // Print Columns A-F
                 for (int c = 0; c < FlightGlobal::COLS; c++) {
                     string colName = FlightGlobal::getColName(c);
                     
@@ -252,7 +277,6 @@ bool addPassenger(string id, string name, int row, string col, string fclass) ov
                         p = p->next;
                     }
 
-                    // Format output
                     if (foundName != "EMPTY") foundName = FlightGlobal::formatName(foundName);
                     if (foundName.length() > 12) foundName = foundName.substr(0, 9) + "..";
 
@@ -275,7 +299,7 @@ bool addPassenger(string id, string name, int row, string col, string fclass) ov
     }
 
     // ==========================================
-    // Function 5: Manifest
+    // FUNCTION 5: Manifest
     // ==========================================
     void displayManifest() override {
         if (head == nullptr) {
@@ -292,6 +316,7 @@ bool addPassenger(string id, string name, int row, string col, string fclass) ov
              << left << setw(15) << "Class" << endl;
         cout << "--------------------------------------------------------------" << endl;
 
+        // Display Main Doubly Linked List
         Passenger* current = head;
         while (current != nullptr) {
             string fullSeat = to_string(current->seatRow) + current->seatCol;
@@ -301,13 +326,29 @@ bool addPassenger(string id, string name, int row, string col, string fclass) ov
                  << left << setw(15) << current->flightClass << endl;
             current = current->next;
         }
+        
+        // --- DISPLAY WAITLIST (Singly Linked List) ---
+        // Added this section to demonstrate Singly Linked List usage to lecturer
+        cout << "\n------------------ WAITLIST (Singly Linked List) ------------------" << endl;
+        if (waitlistHead == nullptr) {
+            cout << "(Empty)" << endl;
+        } else {
+            WaitlistNode* temp = waitlistHead;
+            int count = 1;
+            while (temp != nullptr) {
+                cout << count++ << ". " << temp->name << " (" << temp->id << ") - " << temp->flightClass << endl;
+                temp = temp->next;
+            }
+        }
+        
         cout << "==============================================================" << endl;
         cout << "Press Any Key + Enter to continue...";
         string dummy; cin >> dummy;
     }
 
     // ==========================================
-    // Function 6: Bubble Sort (Swapping Data)
+    // ALGORITHM 1: Bubble Sort (By Name)
+    // Strategy: Swap Data instead of Nodes for simplicity
     // ==========================================
     void sortAlphabetically() override {
         if (head == nullptr || head->next == nullptr) return;
@@ -316,7 +357,7 @@ bool addPassenger(string id, string name, int row, string col, string fclass) ov
         Passenger* ptr1;
         Passenger* lptr = nullptr;
 
-        cout << ">> Sorting Linked List by Name..." << endl;
+        cout << ">> Sorting Linked List by Name (Bubble Sort)..." << endl;
 
         do {
             swapped = false;
@@ -324,7 +365,7 @@ bool addPassenger(string id, string name, int row, string col, string fclass) ov
 
             while (ptr1->next != lptr) {
                 if (ptr1->name > ptr1->next->name) {
-                    // SWAP DATA (Easier and safer than swapping nodes)
+                    // SWAP DATA (Efficiency: Avoiding complex pointer re-wiring)
                     swap(ptr1->passengerID, ptr1->next->passengerID);
                     swap(ptr1->name, ptr1->next->name);
                     swap(ptr1->seatRow, ptr1->next->seatRow);
@@ -342,10 +383,9 @@ bool addPassenger(string id, string name, int row, string col, string fclass) ov
     }
 
     // ==========================================
-    // Singly Linked List Waitlist (Requirement)
+    // WAITLIST IMPLEMENTATION (Singly Linked List)
     // ==========================================
     void addToWaitlist(string id, string name, string fclass) override {
-        // Create Node
         WaitlistNode* newNode = new WaitlistNode;
         newNode->id = id;
         newNode->name = name;
@@ -363,7 +403,10 @@ bool addPassenger(string id, string name, int row, string col, string fclass) ov
         cout << ">> [Waitlist] " << name << " added to priority queue." << endl;
     }
 
-    // [Function 7] Merge Sort by ID
+    // ==========================================
+    // ALGORITHM 2: Merge Sort (By ID)
+    // Complexity: O(N log N) - Ideal for Linked Lists
+    // ==========================================
     void sortByID() override {
         if (head == nullptr || head->next == nullptr) {
             cout << ">> Not enough passengers to sort." << endl;
@@ -371,9 +414,10 @@ bool addPassenger(string id, string name, int row, string col, string fclass) ov
         }
         cout << ">> [Linked List] Sorting by ID using MERGE SORT..." << endl;
 
+        // Perform Merge Sort
         head = mergeSortRec(head);
 
-        // CRITICAL: Fix the Tail Pointer after sorting!
+        // Fix the Tail Pointer (Crucial after pointer manipulation)
         Passenger* temp = head;
         while (temp->next != nullptr) {
             temp = temp->next;
