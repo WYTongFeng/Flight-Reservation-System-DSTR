@@ -121,44 +121,121 @@ void runSystem(FlightSystem* sys, string name) {
 
         switch (choice) {
             case 1: { 
-                // FIXED: Now asks for ID so you can remove them later
+                // 1. Collect Input FIRST (Don't time this!)
                 cout << "Enter ID (e.g., P9999): ";
                 cin >> id;
-                
                 cout << "Enter Name: ";
-                cin.ignore(); 
+                cin.ignore();
                 getline(cin, pname);
-
                 row = readRow();
                 seatCol = readCol_AtoF();
                 fclass = readClass_FBE();
 
-                sys->addPassenger(id, pname, row, seatCol, fclass);
+                // 2. Start Timer just before the system work
+                Timer t;
+                t.start();
+                
+                // 3. Perform the Insertion
+                bool success = sys->addPassenger(id, pname, row, seatCol, fclass);
+                
+                // 4. Stop Timer immediately
+                t.stop();
+
+                // 5. Print Performance Result
+                cout << ">> [Performance] Insert Time: " << t.getDurationInMicroseconds() << " µs" << endl;
+
+                // 6. Handle Waitlist Logic (if add failed)
+                if (!success) {
+                    char choice;
+                    cout << ">> Seat/ID invalid or taken. Add to Waitlist? (y/n): ";
+                    cin >> choice;
+                    if (choice == 'y' || choice == 'Y') {
+                        sys->addToWaitlist(id, pname, fclass);
+                    }
+                }
                 break;
             }
-            case 2:
+            case 2:{
+                // 1. Collect Input
                 cout << "Enter Passenger ID to remove: ";
                 cin >> id;
-                if (sys->removePassenger(id)) cout << ">> Removed successfully.\n";
+
+                // 2. Start Timer
+                Timer t;
+                t.start();
+
+                // 3. Perform Deletion
+                bool success = sys->removePassenger(id);
+
+                // 4. Stop Timer
+                t.stop();
+
+                if (success) cout << ">> Removed successfully.\n";
                 else cout << ">> Passenger NOT found.\n";
+
+                // 5. Print Performance Result
+                cout << ">> [Performance] Delete Time: " << t.getDurationInMicroseconds() << " µs" << endl;
                 break;
-            case 3:
+            }
+            case 3: // Search
                 cout << "Enter Passenger ID to search: ";
                 cin >> id;
                 {
+                    Timer t;     // 1. Create Timer
+                    t.start();   // 2. Start
+                    
                     Passenger* p = sys->searchPassenger(id);
-                    if (p) cout << ">> Found: " << p->name << " at " << p->seatRow << p->seatCol << endl;
+                    
+                    t.stop();    // 3. Stop
+                    
+                    if (p) cout << ">> Found: " << p->name << endl;
                     else cout << ">> Not found.\n";
+
+                    // 4. Print Time
+                    cout << ">> [Performance] Time taken: " 
+                         << t.getDurationInMicroseconds() << " microseconds." << endl;
                 }
                 break;
-            case 4:
-                sys->displaySeatingMap();
+            case 4: // Display Seat Map
+                {
+                    // 1. Start Timer
+                    Timer t;
+                    t.start();
+
+                    // 2. Run the Display Function
+                    sys->displaySeatingMap();
+
+                    // 3. Stop Timer
+                    t.stop();
+
+                    // 4. Print the "Shocking" Result
+                    cout << ">> [Performance] Map Rendering Time: " 
+                         << t.getDurationInMicroseconds() << " µs" << endl;
+                    
+                    // Small pause so the user can see the time before the map clears the screen
+                    cout << "(Press Enter to continue)";
+                    cin.ignore(); cin.get(); 
+                }
                 break;
-            case 5:
-                sys->sortAlphabetically();
+            case 5: // Sort Alphabetical
+                {
+                    Timer t;
+                    t.start();
+                    sys->sortAlphabetically();
+                    t.stop();
+                    cout << ">> [Performance] Sort Time: " 
+                         << t.getDurationInMilliseconds() << " ms." << endl;
+                }
                 break;
-            case 6:
-                sys->sortByID();
+            case 6: // Sort by ID
+                {
+                    Timer t;
+                    t.start();
+                    sys->sortByID();
+                    t.stop();
+                    cout << ">> [Performance] Merge Sort Time: " 
+                         << t.getDurationInMilliseconds() << " ms." << endl;
+                }
                 break;
             case 0:
                 break;

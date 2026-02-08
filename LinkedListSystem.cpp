@@ -82,7 +82,7 @@ public:
     // ==========================================
     // Function 1: Reservation (Insertion)
     // ==========================================
-void addPassenger(string id, string name, int row, string col, string fclass) override {
+bool addPassenger(string id, string name, int row, string col, string fclass) override {
     
     Passenger* temp = head;
     
@@ -92,12 +92,12 @@ void addPassenger(string id, string name, int row, string col, string fclass) ov
         // Check Seat
         if (temp->seatRow == row && temp->seatCol == col) {
             cout << ">> [Failed] Seat " << row << col << " is already occupied by " << temp->name << "." << endl;
-            return; 
+            return false; 
         }
         // Check ID
         if (temp->passengerID == id) {
             cout << ">> [Failed] Passenger ID " << id << " already exists." << endl;
-            return; 
+            return false; 
         }
         temp = temp->next;
     }
@@ -123,6 +123,7 @@ void addPassenger(string id, string name, int row, string col, string fclass) ov
     }
     currentCount++;
     cout << ">> [Success] Passenger " << name << " (" << id << ") added to linked list." << endl;
+    return true;
 }
 
     // ==========================================

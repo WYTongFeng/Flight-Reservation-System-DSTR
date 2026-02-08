@@ -89,7 +89,7 @@ public:
     // [Function 1] Reservation (Insertion)
     // Array: 填入二维数组
     // LL: 插入双向链表 (Doubly Insert)
-    virtual void addPassenger(string id, string name, int row, string col, string fclass) = 0;
+    virtual bool addPassenger(string id, string name, int row, string col, string fclass) = 0;
 
     // [Function 2] Cancellation (Deletion)
     // Array: 清空格子 + 1D数组移位 (Shift)
@@ -112,7 +112,8 @@ public:
     // [Requirement] Sorting Algorithm
     // ⚠️ 规则: 必须都使用 Bubble Sort (冒泡排序) 按名字 A-F 排序
     virtual void sortAlphabetically() = 0; // Existing Bubble Sort
-    virtual void sortByID() = 0;           // << ADD THIS (Merge Sort)
+    
+    virtual void sortByID() { cout << ">> Feature not available." << endl; }
 
     // [Requirement] Singly Linked List (候补名单)
     // 专门为了满足老师 "Use Singly and Doubly" 的要求

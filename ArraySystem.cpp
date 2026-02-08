@@ -139,7 +139,7 @@ public:
     }
 
     // [Function 1] Reservation
-    void addPassenger(string id, string name, int row, string col, string fclass) override {
+    bool addPassenger(string id, string name, int row, string col, string fclass) override {
     // 1. Check Row Validity & Expand if needed
         if (row > maxRows) expandSeatMap(row);
         
@@ -148,13 +148,13 @@ public:
 
         if (rIndex < 0 || cIndex == -1) {
             cout << ">> [Error] Invalid Seat Position: " << row << col << endl;
-            return;
+            return false;
         }
 
         // 2. SEAT COLLISION CHECK (O(1))
         if (seatMap[rIndex][cIndex] != "EMPTY") {
             cout << ">> [Failed] Seat " << row << col << " is already occupied by " << seatMap[rIndex][cIndex] << "." << endl;
-            return;
+            return false;
         }
 
         // 3. ID UNIQUENESS CHECK (New Feature! O(N))
@@ -162,7 +162,7 @@ public:
         for (int i = 0; i < currentCount; i++) {
             if (passengerList[i]->passengerID == id) {
                 cout << ">> [Failed] Passenger ID " << id << " already exists (Holder: " << passengerList[i]->name << ")." << endl;
-                return;
+                return false;
             }
         }
 
@@ -181,6 +181,7 @@ public:
         seatMap[rIndex][cIndex] = name;       // Add to 2D Map
 
         cout << ">> [Success] Passenger " << name << " (" << id << ") assigned to " << row << col << "." << endl;
+        return true; // RETURN TRUE
     }
 
     // [Function 2] Remove Passenger
