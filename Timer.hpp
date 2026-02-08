@@ -3,8 +3,8 @@
 
 #include <iostream>
 #include <chrono>
-#include <windows.h> // Required for Windows memory tracking
-#include <psapi.h>   // Required for Windows memory tracking
+#include <windows.h> 
+#include <psapi.h>   
 
 using namespace std;
 using namespace std::chrono;
@@ -20,14 +20,25 @@ public:
     void start() { start_time = high_resolution_clock::now(); }
     void stop() { end_time = high_resolution_clock::now(); }
 
-    // Measures current RAM usage of the program in Kilobytes [cite: 90, 114]
-    long long getMemoryUsageKB() {
-        PROCESS_MEMORY_COUNTERS_EX pmc;
-        GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
-        return pmc.WorkingSetSize / 1024;
+    // This is the missing function causing your error
+    long long getDurationInMilliseconds() {
+        auto duration = duration_cast<milliseconds>(end_time - start_time);
+        return duration.count();
     }
 
-    // Helper to display theoretical complexity for your documentation 
+    long long getDurationInMicroseconds() {
+        auto duration = duration_cast<microseconds>(end_time - start_time);
+        return duration.count();
+    }
+
+    long long getMemoryUsageKB() {
+        PROCESS_MEMORY_COUNTERS_EX pmc;
+        if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc))) {
+            return pmc.WorkingSetSize / 1024;
+        }
+        return 0;
+    }
+
     void printComplexity(string algorithmType) {
         cout << "\n--- Theoretical Complexity Analysis ---" << endl;
         if (algorithmType == "BubbleSort") {
@@ -36,15 +47,8 @@ public:
         } else if (algorithmType == "LinearSearch") {
             cout << "Time Complexity: O(N)" << endl;
             cout << "Space Complexity: O(1)" << endl;
-        } else if (algorithmType == "ArrayInsert") {
-            cout << "Time Complexity: O(1)" << endl;
-            cout << "Space Complexity: O(N*M) static allocation" << endl;
         }
     }
-
-    long long getDurationInMicroseconds() {
-        auto duration = duration_cast<microseconds>(end_time - start_time);
-        return duration.count();
-    }
 };
+
 #endif
