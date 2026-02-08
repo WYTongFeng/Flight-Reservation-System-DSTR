@@ -32,6 +32,13 @@ struct Passenger {
     Passenger* prev = nullptr; 
 };
 
+struct WaitlistNode {
+    string id;
+    string name;
+    string flightClass;
+    WaitlistNode* next; // Singly Linked List only has 'next'
+};
+
 // ==========================================
 // 2. 全局配置与工具 (FlightGlobal)
 //    Array 和 LL 组共用这一套设置

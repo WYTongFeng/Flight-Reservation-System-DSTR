@@ -13,6 +13,10 @@ private:
     int passengerCapacity; 
     int currentCount;      
 
+    // --- NEW: Waitlist Variables (Singly Linked List) ---
+    WaitlistNode* waitlistHead;
+    WaitlistNode* waitlistTail;
+
     // Helper: Expand Seat Map (2D Array)
     void expandSeatMap(int requiredRow) {
         if (requiredRow <= maxRows) return;
@@ -68,6 +72,10 @@ public:
         passengerList = new Passenger*[passengerCapacity];
         for(int i=0; i<passengerCapacity; i++) passengerList[i] = nullptr;
 
+        // Init Waitlist
+        waitlistHead = nullptr;
+        waitlistTail = nullptr;
+
         cout << ">> Array System Initialized." << endl;
     }
 
@@ -79,6 +87,14 @@ public:
         if (passengerList) {
             for (int i = 0; i < currentCount; i++) delete passengerList[i];
             delete[] passengerList;
+        }
+
+        // Delete Waitlist (Singly Linked List)
+        WaitlistNode* temp = waitlistHead;
+        while (temp != nullptr) {
+            WaitlistNode* next = temp->next;
+            delete temp;
+            temp = next;
         }
     }
 
@@ -299,5 +315,24 @@ public:
 
     void addToWaitlist(string id, string name, string fclass) override {
         cout << "[ArraySystem] This feature is primarily for the Linked List implementation." << endl;
+    }
+
+    // --- NEW: Waitlist Implementation ---
+    void addToWaitlist(string id, string name, string fclass) override {
+        WaitlistNode* newNode = new WaitlistNode;
+        newNode->id = id;
+        newNode->name = name;
+        newNode->flightClass = fclass;
+        newNode->next = nullptr;
+
+        // Add to Tail (Singly Linked List)
+        if (waitlistHead == nullptr) {
+            waitlistHead = newNode;
+            waitlistTail = newNode;
+        } else {
+            waitlistTail->next = newNode;
+            waitlistTail = newNode;
+        }
+        cout << ">> [Waitlist] " << name << " added to priority queue (Singly Linked List)." << endl;
     }
 };

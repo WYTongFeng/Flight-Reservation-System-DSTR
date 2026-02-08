@@ -11,11 +11,20 @@ private:
     Passenger* tail;
     int currentCount;
 
+    // --- NEW: Waitlist Variables (Singly Linked List) ---
+    WaitlistNode* waitlistHead;
+    WaitlistNode* waitlistTail;
+
 public:
     LinkedListSystem() {
         head = nullptr;
         tail = nullptr;
         currentCount = 0;
+
+        // Initialize Waitlist
+        waitlistHead = nullptr;
+        waitlistTail = nullptr;
+        
         cout << ">> Linked List System Initialized." << endl;
     }
 
@@ -282,7 +291,21 @@ void addPassenger(string id, string name, int row, string col, string fclass) ov
     // Singly Linked List Waitlist (Requirement)
     // ==========================================
     void addToWaitlist(string id, string name, string fclass) override {
-        cout << ">> Added " << name << " to Waitlist (Singly Linked List)." << endl;
-        // Logic for waitlist would go here (simplified for now)
+        // Create Node
+        WaitlistNode* newNode = new WaitlistNode;
+        newNode->id = id;
+        newNode->name = name;
+        newNode->flightClass = fclass;
+        newNode->next = nullptr;
+
+        // Add to Tail (Singly Linked List Logic)
+        if (waitlistHead == nullptr) {
+            waitlistHead = newNode;
+            waitlistTail = newNode;
+        } else {
+            waitlistTail->next = newNode; // Point old tail to new node
+            waitlistTail = newNode;       // Update tail
+        }
+        cout << ">> [Waitlist] " << name << " added to priority queue." << endl;
     }
 };
