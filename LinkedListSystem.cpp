@@ -70,13 +70,24 @@ public:
         cout << ">> Linked List System Initialized." << endl;
     }
 
-    ~LinkedListSystem() {
+        ~LinkedListSystem() {
+        // 1. Clean up Main Passenger List
         Passenger* temp = head;
         while (temp != nullptr) {
             Passenger* nextNode = temp->next;
             delete temp;
             temp = nextNode;
         }
+
+        // 2. Clean up Waitlist (YOU MISSED THIS PART)
+        WaitlistNode* wTemp = waitlistHead;
+        while (wTemp != nullptr) {
+            WaitlistNode* wNext = wTemp->next;
+            delete wTemp;
+            wTemp = wNext;
+        }
+        
+        cout << ">> Linked List System Destroyed." << endl;
     }
 
     // ==========================================
