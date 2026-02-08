@@ -269,17 +269,38 @@ public:
         return true;
     }
 
-    // ==========================================
-    // FUNCTION 3: Search Passenger
+// ==========================================
+    // FUNCTION 3: Search Passenger (Updated for Waitlist)
     // ==========================================
     Passenger* searchPassenger(const string& id) override {
-        // Standard Linear Search O(N)
+        // 1. Search Main List (Array Linear Search)
         for (int i = 0; i < currentCount; i++) {
             if (passengerList[i] != nullptr && passengerList[i]->passengerID == id) {
-                return passengerList[i]; 
+                return passengerList[i]; // Found in the main plane!
             }
         }
-        return nullptr;
+
+        // 2. Search Waitlist (Singly Linked List)
+        // If we didn't find them in the array, check the waitlist
+        WaitlistNode* wTemp = waitlistHead;
+        while (wTemp != nullptr) {
+            if (wTemp->id == id) {
+                // Found in Waitlist!
+                // Use the same "Static Object Trick" to return a Passenger* pointer
+                static Passenger tempResult; 
+                
+                tempResult.passengerID = wTemp->id;
+                tempResult.name = wTemp->name + " [WAITLIST]";
+                tempResult.seatRow = 0;
+                tempResult.seatCol = "WL";
+                tempResult.flightClass = wTemp->flightClass;
+                
+                return &tempResult;
+            }
+            wTemp = wTemp->next;
+        }
+
+        return nullptr; // Not found in Array OR Waitlist
     }
 
     // ==========================================

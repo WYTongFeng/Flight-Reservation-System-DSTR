@@ -210,18 +210,41 @@ public:
     }
 
     // ==========================================
-    // FUNCTION 3: Search (Linear Search)
+    // FUNCTION 3: Search (Modified to check Waitlist)
     // ==========================================
     Passenger* searchPassenger(const string& id) override {
+        // 1. First, check the Main Flight (Seated Passengers)
         Passenger* current = head;
-        // Traverse linearly O(N)
         while (current != nullptr) {
             if (current->passengerID == id) {
-                return current;
+                return current; // Found on the plane!
             }
             current = current->next;
         }
-        return nullptr;
+
+        // 2. If not found, check the Waitlist
+        WaitlistNode* wTemp = waitlistHead;
+        while (wTemp != nullptr) {
+            if (wTemp->id == id) {
+                // FOUND IN WAITLIST!
+                // Problem: This function must return a 'Passenger*', but wTemp is a 'WaitlistNode*'.
+                // Solution: Create a static temporary passenger to return.
+                
+                static Passenger tempResult; 
+                // Using 'static' ensures this object survives after the function ends so main.cpp can read it.
+                
+                tempResult.passengerID = wTemp->id;
+                tempResult.name = wTemp->name + " [WAITLIST]"; // Add a tag so you know
+                tempResult.seatRow = 0;      // 0 indicates no seat
+                tempResult.seatCol = "WL";   // "WL" for Waitlist
+                tempResult.flightClass = wTemp->flightClass;
+                
+                return &tempResult;
+            }
+            wTemp = wTemp->next;
+        }
+
+        return nullptr; // Really not found anywhere
     }
 
     // ==========================================
