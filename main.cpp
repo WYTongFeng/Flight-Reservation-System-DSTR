@@ -307,6 +307,7 @@ int main() {
 
         if (mainChoice == 1) runSystem(arraySys, "ARRAY SYSTEM");
         else if (mainChoice == 2) runSystem(listSys, "LINKED LIST SYSTEM");
+        
         else if (mainChoice == 3) break;
     }
 
