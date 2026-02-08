@@ -14,6 +14,8 @@
 
 using namespace std;
 
+long long globalMaxID = 0;
+
 // ==========================================
 // HELPER FUNCTIONS (Input Validation)
 // ==========================================
@@ -88,19 +90,23 @@ void loadData(FlightSystem* sys, string filename) {
         stringstream ss(line);
         string id, name, rowStr, col, fclass;
         
-        // Parse CSV Line
         getline(ss, id, ',');
         getline(ss, name, ',');
         getline(ss, rowStr, ',');
         getline(ss, col, ',');
         getline(ss, fclass, ',');
 
-        // Clean cleanup for Windows/Mac line endings
         if (!col.empty() && col.back() == '\r') col.pop_back();
         if (!fclass.empty() && fclass.back() == '\r') fclass.pop_back();
 
         if (!id.empty() && !rowStr.empty()) {
             try {
+                // [NEW] Track the highest ID
+                long long currentIdVal = stoll(id); // Convert string ID to number
+                if (currentIdVal > globalMaxID) {
+                    globalMaxID = currentIdVal;
+                }
+
                 sys->addPassenger(id, name, stoi(rowStr), col, fclass);
                 count++;
             } catch (...) {}
@@ -141,9 +147,12 @@ void runSystem(FlightSystem* sys, string name) {
         switch (choice) {
             // --- OPERATION 1: ADD PASSENGER ---
             case 1: { 
-                // 1. Collect Input FIRST (Do not time user typing speed)
-                cout << "Enter ID (e.g., P9999): ";
-                cin >> id;
+                // 1. Auto-Generate ID (Replaces manual input)
+                globalMaxID++; // Increment the global counter
+                id = to_string(globalMaxID); // Convert back to string
+                cout << ">> Auto-Generated ID: " << id << endl;
+
+                // 2. Collect other inputs
                 cout << "Enter Name: ";
                 cin.ignore();
                 getline(cin, pname);
@@ -151,11 +160,12 @@ void runSystem(FlightSystem* sys, string name) {
                 seatCol = readCol_AtoF();
                 fclass = readClass_FBE();
 
-                // 2. Start Timer
+                // 3. Start Timer
                 Timer t;
                 t.start();
                 
-                // 3. Run Algorithm
+                // 4. Run Algorithm
+                // Pass the auto-generated 'id' variable here
                 bool success = sys->addPassenger(id, pname, row, seatCol, fclass);
                 
                 // 4. Stop Timer & Report
