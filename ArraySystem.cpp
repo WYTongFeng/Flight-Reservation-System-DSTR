@@ -132,7 +132,7 @@ public:
     // ==========================================
     ArraySystem() {
         currentCount = 0;
-        maxRows = 50; 
+        maxRows = 30; // FIXED SIZE: A real plane size
         passengerCapacity = 200; 
 
         // Initialize 2D Seat Map
@@ -179,21 +179,26 @@ public:
     // ==========================================
     bool addPassenger(string id, string name, int row, string col, string fclass) override {
         // 1. Expand Array if Row exceeds current limit
-        if (row > maxRows) expandSeatMap(row);
         
+    // Instead, just double check validity (though main.cpp handles this)
+        if (row > maxRows) {
+            cout << ">> [Error] This plane only has " << maxRows << " rows." << endl;
+            return false;
+        }
+
         int rIndex = row - 1;
         int cIndex = FlightGlobal::getColIndex(col);
 
         if (rIndex < 0 || cIndex == -1) {
-            cout << ">> [Error] Invalid Seat Position: " << row << col << endl;
+            cout << ">> [Error] Invalid Seat Position." << endl;
             return false;
         }
 
-        // 2. SEAT COLLISION CHECK
-        // Advantage of Array: Access is O(1) (Instant)
+        // SEAT COLLISION -> WAITLIST
         if (seatMap[rIndex][cIndex] != "EMPTY") {
-            cout << ">> [Failed] Seat " << row << col << " is already occupied by " << seatMap[rIndex][cIndex] << "." << endl;
-            return false;
+            cout << ">> [System] Seat " << row << col << " is taken. Adding to Waitlist..." << endl;
+            addToWaitlist(id, name, fclass); // AUTOMATICALLY GO TO WAITLIST
+            return false; 
         }
 
         // 3. ID UNIQUENESS CHECK

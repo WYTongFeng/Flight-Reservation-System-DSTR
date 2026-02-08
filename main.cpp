@@ -28,11 +28,14 @@ string toLowerStr(string s) {
 
 // Function: Safe Integer Input for Row (1-100)
 int readRow() {
-    int row;
+int row;
     while (true) {
-        cout << "Enter Row (1-100): ";
-        if (cin >> row && row >= 1 && row <= 100) return row;
-        cout << ">> [Error] Please enter a valid row number.\n";
+        cout << "Enter Row (1-30): "; // <--- Change prompt text
+        
+        // <--- Change 100 to 30 below
+        if (cin >> row && row >= 1 && row <= 30) return row; 
+        
+        cout << ">> [Error] Please enter a valid row number (1-30).\n";
         cin.clear();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
