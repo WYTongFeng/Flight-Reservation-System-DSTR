@@ -24,7 +24,7 @@ long long globalMaxID = 0;
 string toLowerStr(string s) {
     for (int i = 0; i < s.length(); i++) {
         if (s[i] >= 'A' && s[i] <= 'Z') {
-            s[i] = s[i] + 32;
+            s[i] = s[i] + 32; // Manual char conversion
         }
     }
     return s;
@@ -32,13 +32,15 @@ string toLowerStr(string s) {
 
 // Function: Safe Integer Input for Row (1-100)
 int readRow() {
-    int row;
+int row;
     while (true) {
-        cout << "Enter Row (1-100): ";
-        if (cin >> row && row >= 1 && row <= 100) return row;
+        cout << "Enter Row (1-30): "; // <--- Change prompt text
         
-        cout << ">> [Error] Please enter a valid row number (1-100).\n";
-        cin.clear(); 
+        // <--- Change 100 to 30 below
+        if (cin >> row && row >= 1 && row <= 30) return row; 
+        
+        cout << ">> [Error] Please enter a valid row number (1-30).\n";
+        cin.clear();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
 }
@@ -53,7 +55,7 @@ string readCol_AtoF() {
             char c = (char)toupper((unsigned char)col[0]);
             if (c >= 'A' && c <= 'F') return string(1, c);
         }
-        cout << ">> [Error] Column must be A-F.\n";
+        cout << ">> [Error] Column must be A, B, C, D, E, or F.\n";
     }
 }
 
@@ -99,7 +101,8 @@ void loadData(FlightSystem* sys, string filename) {
 
         if (!id.empty() && !rowStr.empty()) {
             try {
-                long long currentIdVal = stoll(id);
+                // [NEW] Track the highest ID
+                long long currentIdVal = stoll(id); // Convert string ID to number
                 if (currentIdVal > globalMaxID) {
                     globalMaxID = currentIdVal;
                 }
@@ -142,28 +145,34 @@ void runSystem(FlightSystem* sys, string name) {
         }
 
         switch (choice) {
+            // --- OPERATION 1: ADD PASSENGER ---
             case 1: { 
-                globalMaxID++;
-                id = to_string(globalMaxID);
+                // 1. Auto-Generate ID (Replaces manual input)
+                globalMaxID++; // Increment the global counter
+                id = to_string(globalMaxID); // Convert back to string
                 cout << ">> Auto-Generated ID: " << id << endl;
 
+                // 2. Collect other inputs
                 cout << "Enter Name: ";
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cin.ignore();
                 getline(cin, pname);
-
                 row = readRow();
                 seatCol = readCol_AtoF();
                 fclass = readClass_FBE();
 
+                // 3. Start Timer
                 Timer t;
                 t.start();
+                
+                // 4. Run Algorithm
+                // Pass the auto-generated 'id' variable here
                 bool success = sys->addPassenger(id, pname, row, seatCol, fclass);
+                
+                // 4. Stop Timer & Report
                 t.stop();
+                cout << ">> [Performance] Insert Time: " << t.getDurationInMicroseconds() << " microseconds" << endl;
 
-                cout << ">> [Performance] Insert Time: "
-                     << t.getDurationInMicroseconds()
-                     << " microseconds" << endl;
-
+                // 5. Handle Waitlist (Singly Linked List) if Full
                 if (!success) {
                     char choice;
                     cout << ">> Seat/ID invalid or taken. Add to Waitlist? (y/n): ";
@@ -175,6 +184,7 @@ void runSystem(FlightSystem* sys, string name) {
                 break;
             }
 
+            // --- OPERATION 2: REMOVE PASSENGER ---
             case 2:{
                 cout << "Enter Passenger ID to remove: ";
                 cin >> id;
@@ -187,67 +197,65 @@ void runSystem(FlightSystem* sys, string name) {
                 if (success) cout << ">> Removed successfully.\n";
                 else cout << ">> Passenger NOT found.\n";
 
-                cout << ">> [Performance] Delete Time: "
-                     << t.getDurationInMicroseconds()
-                     << " microseconds" << endl;
+                cout << ">> [Performance] Delete Time: " << t.getDurationInMicroseconds() << " microseconds" << endl;
                 break;
             }
 
-            case 3: {
+            // --- OPERATION 3: SEARCH PASSENGER ---
+            case 3: 
                 cout << "Enter Passenger ID to search: ";
                 cin >> id;
+                {
+                    Timer t;
+                    t.start();
+                    Passenger* p = sys->searchPassenger(id);
+                    t.stop();
+                    
+                    if (p) cout << ">> Found: " << p->name << endl;
+                    else cout << ">> Not found.\n";
 
-                Timer t;
-                t.start();
-                Passenger* p = sys->searchPassenger(id);
-                t.stop();
-                
-                if (p) cout << ">> Found: " << p->name << endl;
-                else cout << ">> Not found.\n";
-
-                cout << ">> [Performance] Search Time: "
-                     << t.getDurationInMicroseconds()
-                     << " microseconds" << endl;
+                    cout << ">> [Performance] Search Time: " << t.getDurationInMicroseconds() << " microseconds" << endl;
+                }
                 break;
-            }
 
-            case 4: {
-                Timer t;
-                t.start();
-                sys->displaySeatingMap();
-                t.stop();
+            // --- OPERATION 4: DISPLAY SEAT MAP ---
+            case 4: 
+                {
+                    // Note: This measures Rendering Time + Data Access Time
+                    // Array will be significantly faster than Linked List here.
+                    Timer t;
+                    t.start();
+                    sys->displaySeatingMap();
+                    t.stop();
 
-                cout << ">> [Performance] Map Rendering Time: "
-                     << t.getDurationInMicroseconds()
-                     << " microseconds" << endl;
-                
-                cout << "(Press Enter to continue)";
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                cin.get(); 
+                    cout << ">> [Performance] Map Rendering Time: " << t.getDurationInMicroseconds() << " microseconds" << endl;
+                    
+                    cout << "(Press Enter to continue)";
+                    cin.ignore(); cin.get(); 
+                }
                 break;
-            }
 
-            case 5: {
-                Timer t;
-                t.start();
-                sys->sortAlphabetically();
-                t.stop();
-                cout << ">> [Performance] Bubble Sort Time: "
-                     << t.getDurationInMilliseconds()
-                     << " ms." << endl;
+            // --- OPERATION 5: BUBBLE SORT (Name) ---
+            case 5: 
+                {
+                    Timer t;
+                    t.start();
+                    sys->sortAlphabetically();
+                    t.stop();
+                    cout << ">> [Performance] Bubble Sort Time: " << t.getDurationInMilliseconds() << " ms." << endl;
+                }
                 break;
-            }
 
-            case 6: {
-                Timer t;
-                t.start();
-                sys->sortByID();
-                t.stop();
-                cout << ">> [Performance] Merge Sort Time: "
-                     << t.getDurationInMilliseconds()
-                     << " ms." << endl;
+            // --- OPERATION 6: MERGE SORT (ID) ---
+            case 6: 
+                {
+                    Timer t;
+                    t.start();
+                    sys->sortByID();
+                    t.stop();
+                    cout << ">> [Performance] Merge Sort Time: " << t.getDurationInMilliseconds() << " ms." << endl;
+                }
                 break;
-            }
 
             case 0:
                 break;
@@ -261,19 +269,21 @@ void runSystem(FlightSystem* sys, string name) {
 // MAIN FUNCTION
 // ==========================================
 int main() {
+    // 1. Create System Instances (Polymorphism)
     FlightSystem* arraySys = new ArraySystem();
     FlightSystem* listSys = new LinkedListSystem();
 
+    // 2. Data Loading
+    // NOTE: Filename is currently set to double extension (.csv.csv) based on user environment
     string filename = "flight_passenger_data.csv.csv";
     
     cout << ">> Initializing Array System..." << endl;
     loadData(arraySys, filename);
-    arraySys->processWaitlist();
 
     cout << ">> Initializing Linked List System..." << endl;
     loadData(listSys, filename);
-    listSys->processWaitlist();
 
+    // 3. Main Loop
     int mainChoice;
     while (true) {
         cout << "\n=== FLIGHT RESERVATION SYSTEM ===" << endl;
@@ -283,8 +293,7 @@ int main() {
         cout << "Select: ";
 
         if (!(cin >> mainChoice)) {
-            cin.clear();
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cin.clear(); cin.ignore(numeric_limits<streamsize>::max(), '\n');
             continue;
         }
 
@@ -293,7 +302,8 @@ int main() {
         else if (mainChoice == 3) break;
     }
 
+    // 4. Cleanup
     delete arraySys;
     delete listSys;
     return 0;
-};
+}
