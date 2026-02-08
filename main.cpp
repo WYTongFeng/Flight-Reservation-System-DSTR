@@ -7,10 +7,8 @@
 
 #include "FlightCommon.hpp"
 #include "Timer.hpp" // Custom Timer Class for Performance Testing
-
-// Include System Implementations
 #include "ArraySystem.cpp"
-#include "LinkedListSystem.cpp" 
+#include "LinkedListSystem.cpp"
 
 using namespace std;
 
