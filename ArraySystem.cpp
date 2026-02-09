@@ -419,7 +419,21 @@ public:
     // FUNCTION 5: Display Manifest (Fixed to show Waitlist)
     // ==========================================
     void displayManifest() override {
-        // 1. Display Main Passenger List (Array)
+
+        // Display Waitlist (Singly Linked List) - THIS WAS MISSING
+        cout << "\n------------------ WAITLIST (Singly Linked List) ------------------" << endl;
+        if (waitlistHead == nullptr) {
+            cout << "(Empty)" << endl;
+        } else {
+            WaitlistNode* temp = waitlistHead;
+            int count = 1;
+            while (temp != nullptr) {
+                cout << count++ << ". " << temp->name << " (" << temp->id << ") - " << temp->flightClass << endl;
+                temp = temp->next;
+            }
+        }
+
+        // Display Main Passenger List (Array)
         if (currentCount == 0) {
             cout << ">> [Manifest] Main list is empty." << endl;
         } else {
@@ -440,19 +454,6 @@ public:
                          << left << setw(10) << fullSeat
                          << left << setw(15) << passengerList[i]->flightClass << endl;
                 }
-            }
-        }
-
-        // 2. Display Waitlist (Singly Linked List) - THIS WAS MISSING
-        cout << "\n------------------ WAITLIST (Singly Linked List) ------------------" << endl;
-        if (waitlistHead == nullptr) {
-            cout << "(Empty)" << endl;
-        } else {
-            WaitlistNode* temp = waitlistHead;
-            int count = 1;
-            while (temp != nullptr) {
-                cout << count++ << ". " << temp->name << " (" << temp->id << ") - " << temp->flightClass << endl;
-                temp = temp->next;
             }
         }
         

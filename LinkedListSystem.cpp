@@ -349,6 +349,20 @@ public:
             return;
         }
 
+        // --- DISPLAY WAITLIST (Singly Linked List) ---
+        // Added this section to demonstrate Singly Linked List usage to lecturer
+        cout << "\n------------------ WAITLIST (Singly Linked List) ------------------" << endl;
+        if (waitlistHead == nullptr) {
+            cout << "(Empty)" << endl;
+        } else {
+            WaitlistNode* temp = waitlistHead;
+            int count = 1;
+            while (temp != nullptr) {
+                cout << count++ << ". " << temp->name << " (" << temp->id << ") - " << temp->flightClass << endl;
+                temp = temp->next;
+            }
+        }
+
         cout << "\n==============================================================" << endl;
         cout << "             PASSENGER MANIFEST (LINKED LIST)" << endl;
         cout << "==============================================================" << endl;
@@ -367,20 +381,6 @@ public:
                  << left << setw(10) << fullSeat
                  << left << setw(15) << current->flightClass << endl;
             current = current->next;
-        }
-        
-        // --- DISPLAY WAITLIST (Singly Linked List) ---
-        // Added this section to demonstrate Singly Linked List usage to lecturer
-        cout << "\n------------------ WAITLIST (Singly Linked List) ------------------" << endl;
-        if (waitlistHead == nullptr) {
-            cout << "(Empty)" << endl;
-        } else {
-            WaitlistNode* temp = waitlistHead;
-            int count = 1;
-            while (temp != nullptr) {
-                cout << count++ << ". " << temp->name << " (" << temp->id << ") - " << temp->flightClass << endl;
-                temp = temp->next;
-            }
         }
         
         cout << "==============================================================" << endl;
