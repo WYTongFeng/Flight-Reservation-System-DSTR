@@ -1,7 +1,7 @@
 # Flight Reservation System (DSTR Assignment)
 
 **Course:** Data Structures & Algorithms (CT077-3-2-DSTR)  
-**Group:** [Group **]  
+**Group:** [Group 11]  
 **Semester:** [Year 2 Sem 1]
 
 ## ✈️ Project Overview
@@ -13,10 +13,10 @@ This project involves the design and development of a **Flight Reservation & Sea
 
 | Student ID | Name | Role | Responsibilities |
 | :--- | :--- | :--- | :--- |
-| **[Leader ID]** | **[Leader Name]** | **Leader** | Linked List (Insertion/Deletion), Waitlist Logic, System Architecture |
-| [Member 4 ID] | [Name] | Member | Linked List (Search/Manifest), Performance Analysis, Bubble Sort |
-| [Member 1 ID] | [Name] | Member | Array (Insertion/Visual Map), Coordinate Mapping |
-| [Member 2 ID] | [Name] | Member | Array (Deletion/Search), File I/O, Data Shifting |
+| **[TP080544]** | **[Wong Zi Yee]** | **Leader** | Linked List (Insertion/Deletion), Waitlist Logic, System Architecture |
+| [TP080508] | [Wong Jin Jie] | Member | Linked List (Search/Manifest), Performance Analysis, Bubble Sort |
+| [TP080559] | [Ngo Kar Hong] | Member | Array (Insertion/Visual Map), Coordinate Mapping |
+| [TP082825] | [Jay Chew Jie Lun] | Member | Array (Deletion/Search), File I/O, Data Shifting |
 
 ## 📂 Project Structure
 
